@@ -862,7 +862,10 @@ fingerprinted Luna 1.1 SD package pending exact-image confirmation**
 
 - Added a Browse-only Start popup with A–Z/Z–A ordering; All Files, All Games,
   GBA Only, GB Only, and GBC Only modes; and independent folder and unknown-file
-  visibility. Favorites, Recent, and Tools do not open this popup.
+  visibility. A changes the selected value; L and R are not advertised or
+  handled as popup controls. All four choices persist through
+  `/.superfw/ui-settings.txt` and survive a reboot. Favorites, Recent, and
+  Tools do not open this popup.
 - Added confirmed Reset Favorites and Reset Recent actions to Tools. Each clears
   only its own persisted list and never deletes ROM files.
 - Preserved the boot logo while Browse initializes on the hidden Mode 4 page,

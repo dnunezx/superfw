@@ -73,6 +73,13 @@ uint32_t recent_menu = 1;
 uint32_t hide_hidden = 0;
 uint32_t anim_speed = animspd_cnt / 2;
 
+#ifdef UI_BROWSER_V2
+uint32_t browser_sort_descending = 0;
+uint32_t browser_game_filter = BrowserGameAllFiles;
+uint32_t browser_hide_folders = 0;
+uint32_t browser_hide_unknown = 0;
+#endif
+
 // Default settings
 t_patch_policy patcher_default = PatchAuto;
 
@@ -123,11 +130,16 @@ bool save_ui_settings() {
     "ui_accent=%lu\n"
     "ui_selection=%lu\n"
     "ui_contrast=%lu\n"
+    "browse_sort_descending=%lu\n"
+    "browse_game_filter=%lu\n"
+    "browse_hide_folders=%lu\n"
+    "browse_hide_unknown=%lu\n"
 #endif
     , (lc & 0xFF), (lc >> 8), recent_menu, anim_speed, hide_hidden
 #ifdef UI_BROWSER_V2
     , ui_theme_preset, ui_wallpaper, ui_background_color, ui_accent_color,
-      ui_selection_color, ui_contrast
+      ui_selection_color, ui_contrast, browser_sort_descending,
+      browser_game_filter, browser_hide_folders, browser_hide_unknown
 #endif
   );
 
@@ -241,6 +253,14 @@ static void parse_ui_settings(void *usr, const char *var, const char *value) {
     ui_selection_color = valu % UiColorCount;
   else if (!strcmp(var, "ui_contrast"))
     ui_contrast = valu % UiContrastCount;
+  else if (!strcmp(var, "browse_sort_descending"))
+    browser_sort_descending = valu & 1;
+  else if (!strcmp(var, "browse_game_filter"))
+    browser_game_filter = valu % BrowserGameFilterCount;
+  else if (!strcmp(var, "browse_hide_folders"))
+    browser_hide_folders = valu & 1;
+  else if (!strcmp(var, "browse_hide_unknown"))
+    browser_hide_unknown = valu & 1;
 #endif
   else if (!strcmp(var, "langcode")) {
     uint16_t code = ((uint8_t)value[0]) | (((uint8_t)value[1]) << 8);

@@ -26,7 +26,7 @@ Developed and hardware-tested by **Danny Nunez (dnunezx)** on SuperCard SD.
 - **Four-item dock** — Favorites, Recent, Browse, and Tools.
 - **Real Favorites** — save up to 200 games and launch them normally.
 - **Browse your way** — sort A–Z or Z–A, filter for GBA/GB/GBC, and hide
-  folders or unknown extensions from Browse.
+  folders or unknown extensions from Browse. Your choices survive a reboot.
 - **Safe list maintenance** — Reset Favorites and Reset Recent never remove
   ROM files.
 - **Quick Launch** — launch now or open Options, Advanced, and Details.

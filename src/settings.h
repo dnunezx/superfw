@@ -63,6 +63,20 @@ extern uint32_t anim_speed;
 
 #ifdef UI_BROWSER_V2
 #include "ui_theme.h"
+
+typedef enum {
+  BrowserGameAllFiles = 0,
+  BrowserGameAll,
+  BrowserGameGBA,
+  BrowserGameGB,
+  BrowserGameGBC,
+  BrowserGameFilterCount,
+} t_browser_game_filter;
+
+extern uint32_t browser_sort_descending;
+extern uint32_t browser_game_filter;
+extern uint32_t browser_hide_folders;
+extern uint32_t browser_hide_unknown;
 #endif
 
 // Defaults/Settings

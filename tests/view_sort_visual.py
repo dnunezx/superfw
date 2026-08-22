@@ -42,6 +42,10 @@ def main() -> None:
     configured = frame("popup-gba-hidden")
     if pixel(configured, 6, 100) != 9:
         raise AssertionError("Unknown files is not the selected popup row")
+    if configured[512:] != frame("popup-after-left")[512:]:
+        raise AssertionError("L changed a View & Sort value; only A should change it")
+    if configured[512:] != frame("popup-after-right")[512:]:
+        raise AssertionError("R changed a View & Sort value; only A should change it")
 
     filtered = frame("browse-gba-z-a")
     selected = pixel(filtered, 89, 10)
@@ -57,6 +61,8 @@ def main() -> None:
         raise AssertionError("Start opened View & Sort outside Browse")
 
     for name in (*POPUP_MODES, "popup-z-a", "popup-gba-hidden",
+                 "popup-after-left",
+                 "popup-after-right",
                  "browse-gba-z-a", "recent-before-start",
                  "recent-after-start"):
         visual.render_frame(CAPTURES / f"{name}.frame").save(

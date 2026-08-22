@@ -22,8 +22,9 @@ four-item dock: Favorites, Recent, Browse, and Tools.
 - Start opens the Browse `View & sort` popup. Filename order can be `A-Z` or
   `Z-A`; Game type can show all files, all Game Boy-family ROMs (`.gba`, `.gb`,
   and `.gbc`), or only one of those three formats. Folders and unknown
-  extensions can be shown or hidden independently. These view choices last
-  until reboot.
+  extensions can be shown or hidden independently. Up and Down select a row;
+  A changes its value. All four choices are saved to `ui-settings.txt` as soon
+  as they change and are restored on the next boot.
 - Long titles scroll inside the selected row.
 - Browse, Recent, and Favorites share the same list and cover behavior.
 

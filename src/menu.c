@@ -540,10 +540,6 @@ uint8_t *hiscratch = (uint8_t*)ROM_HISCRATCH_U8;
 static t_cover_cache menu_cover_cache __attribute__((section(".sbss")));
 #ifdef UI_BROWSER_V2
 static t_menu_page_repeat browse_page_repeat;
-static uint8_t browser_sort_descending;
-static uint8_t browser_game_filter;
-static bool browser_hide_folders;
-static bool browser_hide_unknown;
 #endif
 
 #if !defined(UI_BROWSER_V2) || defined(SUPPORT_NORGAMES)
@@ -1528,15 +1524,6 @@ NOINLINE static void browser_open(const char *fn, uint32_t fs) {
 }
 
 #ifdef UI_BROWSER_V2
-enum {
-  BrowserGameAllFiles = 0,
-  BrowserGameAll,
-  BrowserGameGBA,
-  BrowserGameGB,
-  BrowserGameGBC,
-  BrowserGameFilterCount,
-};
-
 enum {
   BrowserFamilyNone = 0,
   BrowserFamilyGBA,
@@ -2827,7 +2814,7 @@ static void render_ui_phase5_popup(volatile uint8_t *frame) {
     model.entries[3].value = browser_hide_folders ? "HIDDEN" : "SHOWN";
     model.entries[4].name = "Unknown files";
     model.entries[4].value = browser_hide_unknown ? "HIDDEN" : "SHOWN";
-    model.footer_left = "A/L/R: CHANGE";
+    model.footer_left = "A: CHANGE";
     model.footer_right = "START/B: BACK";
 #endif
   } else if (spop.pop_num == POPUP_FILE_MGR) {
@@ -4268,9 +4255,7 @@ static void keypress_popup_browser_view(unsigned newkeys) {
   if (newkeys & KEY_BUTTDOWN)
     spop.selector = MIN(3, spop.selector + 1);
 
-  int direction = (newkeys & KEY_BUTTLEFT) ? -1 :
-                  (newkeys & KEY_BUTTRIGHT) ? 1 : 0;
-  if (!(newkeys & KEY_BUTTA) && !direction)
+  if (!(newkeys & KEY_BUTTA))
     return;
 
   switch (spop.selector) {
@@ -4280,7 +4265,7 @@ static void keypress_popup_browser_view(unsigned newkeys) {
   case 1:
     browser_game_filter = cycle_setting(browser_game_filter,
                                         BrowserGameFilterCount,
-                                        direction < 0 ? -1 : 1);
+                                        1);
     break;
   case 2:
     browser_hide_folders ^= 1;
@@ -4293,6 +4278,10 @@ static void keypress_popup_browser_view(unsigned newkeys) {
   browser_reload_filter();
   smenu.anim_state = 0;
   menu_cover_request_selected();
+#ifndef COVER_ART_DEMO
+  if (!save_ui_settings())
+    spop.alert_msg = msgs[lang_id][MSG_ERR_SETSAVE];
+#endif
 }
 #endif
 

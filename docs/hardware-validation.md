@@ -35,9 +35,11 @@ embedded size, and firmware digest are valid, and it remains 2,560 bytes below
 the 512 KiB limit.
 
 The Luna 1.1 SD source adds the visible `Luna 1.1 SD` System Information build
-fingerprint. Because that string changes the firmware binary, its final tagged
-image must complete one exact-hash chain-load before it replaces the current
-image in the accepted lineage or is attached to a public release.
+fingerprint and persists all four Browse View & Sort choices across reboot.
+Its popup advertises and accepts A as the value-change control; L and R remain
+reserved for navigation outside it. These changes produce a new binary, so the
+final tagged image must complete one exact-hash chain-load before it replaces
+the current image in the accepted lineage or is attached to a public release.
 
 The three oldest historical packages remain tracked under
 [`releases/archive`](../releases/README.md). New public binaries should be

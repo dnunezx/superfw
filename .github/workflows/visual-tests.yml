@@ -42,6 +42,13 @@ jobs:
           test -f artifacts/cover-demo-v3/complete.txt
           PYTHONPATH=. python3 tests/cover_demo_v3_visual.py
 
+      - name: Capture and verify Browse View and Sort
+        run: |
+          mkdir -p artifacts/view-sort-v3
+          timeout 18s mgba-headless --script tools/mgba-view-sort-v3.lua cover-demo-v3.gba || test -f artifacts/view-sort-v3/complete.txt
+          test -f artifacts/view-sort-v3/complete.txt
+          python3 tests/view_sort_visual.py
+
       - name: Capture and verify in-game-menu states
         run: |
           mkdir -p artifacts/ingame-menu
@@ -59,6 +66,7 @@ jobs:
             firmware.demo.v3.ewram.elf
             firmware.demo.v3.ewram.map
             artifacts/cover-demo-v3/*
+            artifacts/view-sort-v3/*
             ingame-menu-demo.gba
             firmware.ingame.demo.ewram.elf
             firmware.ingame.demo.ewram.map

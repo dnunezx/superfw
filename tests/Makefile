@@ -31,8 +31,13 @@ all:
 	$(CC) $(CFLAGS) $(MEMCHK_FLAGS) -o menu_nav_test.bin menu_nav_test.c
 	./menu_nav_test.bin
 	lcov -c -d . -o menu_nav_test.info
+	$(CC) $(CFLAGS) $(MEMCHK_FLAGS) -DUI_BROWSER_V2 -ffunction-sections -fdata-sections \
+		-Wl,--gc-sections -o settings_persistence_test.bin settings_persistence_test.c \
+		../src/settings.c ../src/nanoprintf.c -I../
+	./settings_persistence_test.bin
+	lcov -c -d . -o settings_persistence_test.info
 
-	lcov -a cimpl_test.info -a util_test.info -a utf_util_test.info -a crc_test.info -a sha256_test.info -a cheats_test.info -a cover_test.info -a cover_demo_test.info -a menu_nav_test.info -o total.info
+	lcov -a cimpl_test.info -a util_test.info -a utf_util_test.info -a crc_test.info -a sha256_test.info -a cheats_test.info -a cover_test.info -a cover_demo_test.info -a menu_nav_test.info -a settings_persistence_test.info -o total.info
 	rm -rf coverage/
 	genhtml -o coverage/ total.info
 
