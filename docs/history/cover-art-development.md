@@ -58,10 +58,13 @@ grid of multiple covers.
   upstream attribution remain intact.
 - Browser UI redesign work completed on `feature/ui-browser` and is tracked in
   [interface redesign history](ui-redesign.md).
-- The August 14 fixed-page navigation firmware is the current, most recent
-  hardware-validated SuperR7 version. The August 13 Tech Frame image is its
-  immediate rollback; see the [hardware-validation record](../hardware-validation.md)
-  for the exact current image hash and complete accepted lineage.
+- The August 22 Browse-controls and clean boot-handoff firmware is the current,
+  most recent hardware-validated SuperR7 version. The connected page-pill,
+  August 21 dynamic-pill, and August 14 fixed-page images follow it as rollbacks;
+  see the [hardware-validation record](../hardware-validation.md) for exact
+  hashes and the complete accepted lineage. Luna 1.1 SD adds a visible build
+  fingerprint and remains a candidate until its exact final image is
+  chain-loaded.
 
 ## Baseline exit checklist
 

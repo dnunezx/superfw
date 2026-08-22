@@ -23,23 +23,46 @@ Reference concept:
 
 ## Current checkpoint
 
-Status as of **August 14, 2026: the fixed-page list-navigation build is the
-current and most recent hardware-validated firmware; the dynamic Tech Frame
-wallpaper build is its immediate rollback**.
+Status as of **August 22, 2026: the Browse-controls and clean boot-handoff build
+is the current hardware-validated firmware. Luna 1.1 SD adds its visible build
+fingerprint and is awaiting the exact final chain-load before publication**.
 
 - Current hardware-validated firmware:
-  `superr7-page-navigation-hardware-test.gba`, 520,192 bytes (4,096 bytes
+  `superr7-logo-to-ui-no-white-flash-hardware-test.gba`, 521,728 bytes (2,560
+  bytes below the 512 KiB limit), with SHA-256
+  `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204`.
+  It adds Browse-only A–Z/Z–A sorting, all/GBA/GB/GBC filters, independent
+  folder and unknown-extension visibility, Reset Favorites, Reset Recent, and
+  a direct VBlank handoff from the boot logo to the first completed UI frame.
+  The user confirmed that this exact image works great on physical hardware.
+- Luna 1.1 SD release candidate:
+  the same source line with `Luna 1.1 SD` displayed on System Information's
+  Build row. Its final tagged binary remains pending one exact-image chain-load
+  before GitHub publication.
+- Immediate hardware-validated rollback:
+  `superr7-connected-page-pill-test.gba`, 520,704 bytes (3,584 bytes
   below the 512 KiB limit), with
   SHA-256
+  `136C0726E4758460BBE1E7988F4647F8429946F839B0E556A472FC0230482C36`.
+  It preserves fixed seven-item pages, accelerated held Browse paging, and the
+  dynamic fraction beneath the cover while connecting all four shoulders of
+  the rounded outline. The user confirmed that this exact image works great on
+  physical hardware.
+- Earlier hardware-validated rollback:
+  `superr7-dynamic-page-pill-hardware-test.gba`, 520,704 bytes (3,584 bytes
+  below the 512 KiB limit), with SHA-256
+  `0A64F0A7A528B5469B83EC25CA35795608D022ACC344E849E8B39ED9F565CCB2`.
+  It introduced the dynamic Browse page pill and accelerated held paging but
+  retains the disconnected shoulder pixels in the pill outline.
+- Earlier hardware-validated rollback:
+  `superr7-page-navigation-hardware-test.gba`, 520,192 bytes (4,096 bytes
+  below the 512 KiB limit), with SHA-256
   `DCD599CD17745FB350A7176C24257377AB9B301E6C5B661B25594E3D53E5C940`.
-  It changes Browse, Recent, and Favorites to fixed seven-item pages with
-  boundary no-ops and partial final pages. The user confirmed that this exact
-  image works great on physical hardware.
-- Immediate hardware-validated rollback: `superr7.gba`, 520,192 bytes (4,096
-  bytes below the 512 KiB limit), with SHA-256
+  It introduced fixed seven-item pages with boundary no-ops and partial final
+  pages.
+- Earlier hardware-validated Tech Frame rollback: `superr7.gba`, 520,192
+  bytes (4,096 bytes below the 512 KiB limit), with SHA-256
   `63EE181F90C0FCACB0014D6F819B6994C26E2677A589C9DCC355718C9F1FAA4F`.
-  It adds the dynamic Tech Frame wallpaper while removing the rejected Ribbons
-  and Slashes options and assets.
 - Earlier hardware-validated rollback:
   `superr7-boot-logo-v2.gba`, 519,168 bytes (5,120 bytes below the 512 KiB
   limit), with SHA-256
@@ -86,13 +109,13 @@ wallpaper build is its immediate rollback**.
   `releases/archive/2026-08-07-gothic-boot/superr7-phase9-gothic-boot-1eec14f.gba`,
   518,144 bytes, SHA-256
   `93F774D81C6DEF17125587A66B121A8CF126D87256F7F547389ACD482F49A1E5`.
-- The fixed-page navigation build is the current and most recent
-  hardware-validated firmware. The root `superr7.gba` Tech Frame build is its
-  immediate rollback, followed by the boot-logo-v2 ROM, the exact Phase 13
-  Launch Back image, and the archived Phase 11 Favorites image.
-- The earlier branded, Phase 9, Phase 10, Phase 11, Phase 13, boot-logo-v2, and
-  Tech Frame rollback images remain preserved behind the accepted fixed-page
-  navigation candidate.
+- The Browse-controls and clean-handoff image is the current hardware-validated
+  firmware. The connected-page-pill, original dynamic-pill, and fixed-page
+  navigation images are its first three rollbacks, followed by the Tech Frame,
+  boot-logo-v2, Phase 13 Launch Back, and archived Phase 11 Favorites images.
+- Earlier branded, Phase 9, Phase 10, Phase 11, Phase 13, boot-logo-v2, Tech
+  Frame, fixed-page, and original dynamic-pill images remain preserved behind
+  the accepted connected-page-pill candidate.
 
 - The exact cleaned Phase 5 candidate passed physical SuperCard SD validation
   and is now frozen as the functional baseline for the independent **SuperR7**
@@ -248,6 +271,7 @@ The current hardware prototype is:
 | Main content | `y=0..143` | Cover and seven-card game list |
 | Cover frame | `x=3..80`, `y=32..109` | 78-by-78 selected frame around version 3 cover data |
 | Cover artwork | `x=4..79`, `y=33..108` | Native 76-by-76 version 3 `.sfcov` artwork |
+| Browse page pill | centered at `x=42`, `y=121..135`; width `31..74` | Dynamic `current/total` fraction with a connected theme-colored outline |
 | Game list | `x=85..236`, cards at `y=2..138` | Seven stacked 17-pixel cards |
 | Navigation dock | `y=144..159` | Compact Favorites, Recent, Browse, and Tools bar |
 
@@ -786,8 +810,76 @@ Status: **Complete; host and physical hardware validation passed**
   520,192 bytes (4,096 bytes below the 512 KiB limit), SHA-256
   `DCD599CD17745FB350A7176C24257377AB9B301E6C5B661B25594E3D53E5C940`.
 - On August 14, 2026, the user confirmed that this exact image works great on
-  physical SuperCard SD hardware. It is now the current accepted SuperR7
-  firmware; the August 13 Tech Frame image is its immediate rollback.
+  physical SuperCard SD hardware. It became the current accepted SuperR7
+  firmware at that checkpoint and is preserved as a rollback for the later
+  page-pill images.
+
+## August 21, 2026: Dynamic Browse page pill and held paging
+
+Status: **Complete; host, emulator, and physical hardware validation passed**
+
+- Added a rounded page-position pill beneath the Browse cover, displaying only
+  the dynamic current and total page fraction such as `1/2`.
+- Sized the pill from its dock-scale 5-by-7 text, with a 31-pixel minimum and
+  74-pixel maximum. Its outline uses the active Selection color and its fill
+  uses the dock's deep background color.
+- Added frame-based held Left/Right paging in Browse: a 400 ms initial delay,
+  133 ms repeat interval before 1.3 seconds, and 67 ms thereafter. Releasing,
+  reversing, conflicting directional input, leaving Browse, or opening a popup
+  resets the repeat state.
+- All 23 Python checks, the focused navigation test with strict warnings and
+  sanitizers, the v3 cover-demo build, and native mGBA visual checks passed.
+- Hardware-validated image: `superr7-dynamic-page-pill-hardware-test.gba`,
+  520,704 bytes (3,584 bytes below the 512 KiB limit), SHA-256
+  `0A64F0A7A528B5469B83EC25CA35795608D022ACC344E849E8B39ED9F565CCB2`.
+- The user confirmed this exact image on physical SuperCard SD hardware. It
+  became the current image at that checkpoint and is now the immediate rollback
+  for the connected-outline follow-up.
+
+## August 22, 2026: Connected page-pill outline
+
+Status: **Complete; rendered and physical hardware validation passed**
+
+- Closed the four visible raster gaps between the pill's horizontal caps and
+  curved side pixels while preserving its dimensions, placement, palette
+  roles, and dynamic page text.
+- Added visual regression assertions for the upper and lower shoulder pixels.
+- Rebuilt the native v3 emulator ROM. All 23 Python checks, the v3 cover-art
+  visual suite, and the focused rendered pill-continuity check passed. The full
+  Phase 4 replay reached and passed the pill assertion before a separate
+  seven-row navigation-capture assertion remained outstanding.
+- Hardware-validated image: `superr7-connected-page-pill-test.gba`, 520,704
+  bytes (3,584 bytes below the 512 KiB limit), SHA-256
+  `136C0726E4758460BBE1E7988F4647F8429946F839B0E556A472FC0230482C36`.
+- Its GBA header checksum is valid. The user confirmed that this exact image
+  works great on physical SuperCard SD hardware, making it the current accepted
+  SuperR7 firmware at that checkpoint.
+
+## August 22, 2026: Browse controls and clean startup handoff
+
+Status: **Feature-complete; functional image passed physical hardware testing;
+fingerprinted Luna 1.1 SD package pending exact-image confirmation**
+
+- Added a Browse-only Start popup with A–Z/Z–A ordering; All Files, All Games,
+  GBA Only, GB Only, and GBC Only modes; and independent folder and unknown-file
+  visibility. Favorites, Recent, and Tools do not open this popup.
+- Added confirmed Reset Favorites and Reset Recent actions to Tools. Each clears
+  only its own persisted list and never deletes ROM files.
+- Preserved the boot logo while Browse initializes on the hidden Mode 4 page,
+  then installs the UI palette and flips to the completed page together on
+  VBlank. This removes the visible white frame between the logo and main UI.
+- Optimized the compact boot-logo expansion loop without changing any rendered
+  logo pixels. The first captured logo frame has forced blank disabled.
+- Focused sanitizer tests cover list resets, sort direction, filters, and the
+  `Luna 1.1 SD` build fingerprint. The Browse-only mGBA flow and full ratio-10
+  SD build pass.
+- Hardware-confirmed functional image:
+  `superr7-logo-to-ui-no-white-flash-hardware-test.gba`, 521,728 bytes (2,560
+  bytes below the 512 KiB limit), SHA-256
+  `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204`.
+- The fingerprinted Luna 1.1 SD binary is a new candidate because changing the
+  visible Build value changes the ROM. It must be chain-loaded once before the
+  `Luna1.1` tag and GitHub Release are published.
 
 
 Retained regression checklist:

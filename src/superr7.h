@@ -11,6 +11,7 @@
 #define _SUPERR7_H__
 
 #define SUPERR7_PRODUCT_NAME       "SuperR7"
+#define SUPERR7_BUILD_FINGERPRINT  "Luna 1.1 SD"
 #define SUPERR7_MAINTAINER         "dnunezx"
 #define SUPERR7_UPSTREAM_NAME      "SuperFW"
 

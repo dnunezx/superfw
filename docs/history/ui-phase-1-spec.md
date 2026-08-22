@@ -18,7 +18,12 @@ seven-item offset, retaining a full final seven-row window. Focused emulator
 checks and physical SuperCard SD verification passed with that candidate. The
 August 14 production behavior supersedes that navigation model with fixed
 pages, boundary no-ops, and a potentially partial final page. The original
-empty Favorites presentation remains unchanged.
+empty Favorites presentation remains unchanged. The August 21 and 22 Browse
+follow-ups add accelerated held Left/Right paging plus a dynamic page fraction
+beneath the cover; the August 22 image connects the pill's rounded outline.
+The later Luna 1.1 SD line adds Browse-only sorting and Game Boy-family filters,
+confirmed Favorites/Recent reset tools, a clean logo-to-UI VBlank handoff, and
+the visible `Luna 1.1 SD` System Information build fingerprint.
 
 The Launch flow's Options, Advanced, and Details screens now consistently use
 `B: BACK`. The exact archived Phase 13 image passed physical SuperCard SD boot
@@ -29,8 +34,9 @@ On August 12, 2026, `superr7-boot-logo-v2.gba` passed physical hardware
 testing and became the current, most recent hardware-validated SuperR7
 firmware. It replaces the historical Gothic splash and progress bar with a
 centered 112-by-84 stacked `Super R7` logo. Phase 13 is its immediate archived
-rollback for that historical checkpoint. Later hardware-validated Tech Frame
-and fixed-page navigation images now follow it in the accepted lineage.
+rollback for that historical checkpoint. Later hardware-validated Tech Frame,
+fixed-page navigation, dynamic page-pill, and connected page-pill images now
+follow it in the accepted lineage.
 
 ## Decision
 

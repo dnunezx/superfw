@@ -59,6 +59,20 @@ static const uint8_t dock_font[26][7] = {
   {0x1F, 0x01, 0x02, 0x04, 0x08, 0x10, 0x1F}, /* Z */
 };
 
+static const uint8_t dock_number_font[11][7] = {
+  {0x0E, 0x11, 0x13, 0x15, 0x19, 0x11, 0x0E}, /* 0 */
+  {0x0C, 0x14, 0x04, 0x04, 0x04, 0x04, 0x1F}, /* 1 */
+  {0x0E, 0x11, 0x01, 0x02, 0x04, 0x08, 0x1F}, /* 2 */
+  {0x1E, 0x01, 0x01, 0x0E, 0x01, 0x01, 0x1E}, /* 3 */
+  {0x02, 0x06, 0x0A, 0x12, 0x1F, 0x02, 0x02}, /* 4 */
+  {0x1F, 0x10, 0x10, 0x1E, 0x01, 0x01, 0x1E}, /* 5 */
+  {0x0E, 0x10, 0x10, 0x1E, 0x11, 0x11, 0x0E}, /* 6 */
+  {0x1F, 0x01, 0x02, 0x04, 0x08, 0x08, 0x08}, /* 7 */
+  {0x0E, 0x11, 0x11, 0x0E, 0x11, 0x11, 0x0E}, /* 8 */
+  {0x0E, 0x11, 0x11, 0x0F, 0x01, 0x01, 0x0E}, /* 9 */
+  {0x01, 0x02, 0x02, 0x04, 0x08, 0x08, 0x10}, /* / */
+};
+
 _Static_assert(COVER_PALETTE_BASE == 20,
                "phase 2 UI palette must end before cover colors");
 _Static_assert(UI_BROWSER_V2_COVER_LEFT % 2 == 0,
@@ -301,6 +315,45 @@ static void draw_centered_cover_message(volatile uint8_t *frame,
   draw_text_clipped(message, frame, x, 62, 68, color);
 }
 
+static unsigned dock_text_width(const char *text);
+static void draw_dock_text(volatile uint8_t *frame, const char *text,
+                           unsigned x, unsigned y, uint8_t color);
+
+static unsigned page_pill_inset(unsigned edge) {
+  return edge == 0 ? 6 : edge == 1 ? 3 : edge == 2 ? 2 :
+         edge == 3 ? 1 : 0;
+}
+
+static void draw_page_pill(volatile uint8_t *frame, const char *page_text) {
+  if (!page_text)
+    return;
+
+  unsigned text_width = dock_text_width(page_text);
+  const unsigned width = MIN(74, MAX(31, text_width + 14));
+  const unsigned left = 42 - width / 2;
+  const unsigned top = 121;
+  const unsigned height = 15;
+  for (unsigned row = 0; row < height; row++) {
+    unsigned edge = MIN(row, height - row - 1);
+    unsigned inset = page_pill_inset(edge);
+    unsigned span = width - inset * 2;
+    uint8_t color = (row == 0 || row == height - 1) ? UiV2GlowEdge :
+                                                     UiV2BackgroundDeep;
+    fill_rect(frame, left + inset, top + row, span, 1, color);
+    if (row && row + 1 < height) {
+      unsigned outer_inset = page_pill_inset(edge - 1);
+      for (unsigned connector = inset; connector <= outer_inset; connector++) {
+        set_pixel(frame, left + connector, top + row, UiV2GlowEdge);
+        set_pixel(frame, left + width - connector - 1, top + row,
+                  UiV2GlowEdge);
+      }
+    }
+  }
+
+  draw_dock_text(frame, page_text, left + (width - text_width) / 2, top + 4,
+                 UiV2White);
+}
+
 static void draw_cover(volatile uint8_t *frame,
                        const t_ui_browser_v2_model *model) {
   draw_box(frame, 3, 32, UI_BROWSER_V2_COVER_FRAME_SIZE,
@@ -354,11 +407,18 @@ static unsigned dock_text_width(const char *text) {
 static void draw_dock_text(volatile uint8_t *frame, const char *text,
                            unsigned x, unsigned y, uint8_t color) {
   while (*text) {
-    unsigned glyph = *text >= 'A' && *text <= 'Z' ? *text - 'A' : 0;
-    for (unsigned row = 0; row < 7; row++)
-      for (unsigned col = 0; col < 5; col++)
-        if (dock_font[glyph][row] & (0x10 >> col))
-          set_pixel(frame, x + col, y + row, color);
+    const uint8_t *glyph = NULL;
+    if (*text >= 'A' && *text <= 'Z')
+      glyph = dock_font[*text - 'A'];
+    else if (*text >= '0' && *text <= '9')
+      glyph = dock_number_font[*text - '0'];
+    else if (*text == '/')
+      glyph = dock_number_font[10];
+    if (glyph)
+      for (unsigned row = 0; row < 7; row++)
+        for (unsigned col = 0; col < 5; col++)
+          if (glyph[row] & (0x10 >> col))
+            set_pixel(frame, x + col, y + row, color);
     x += 6;
     text++;
   }
@@ -414,8 +474,10 @@ void ui_browser_v2_load_palette(volatile uint16_t *palette) {
 void ui_browser_v2_render(volatile uint8_t *frame,
                           const t_ui_browser_v2_model *model) {
   draw_background(frame);
-  if (model->show_cover)
+  if (model->show_cover) {
     draw_cover(frame, model);
+    draw_page_pill(frame, model->page_text);
+  }
   draw_rows(frame, model);
   if (!model->entry_count) {
     if (model->show_cover)

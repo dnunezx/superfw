@@ -54,6 +54,7 @@ typedef struct {
   const uint8_t *cover_pixels;
   const char *footer_left;
   const char *footer_right;
+  const char *page_text;
   uint8_t entry_count;
   uint8_t selected_row;
   uint8_t selected_dock;

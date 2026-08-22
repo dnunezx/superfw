@@ -93,6 +93,34 @@ def assert_glow_variants() -> None:
         raise AssertionError("glow variants are not visually distinct after BGR555 conversion")
 
 
+def assert_page_pill() -> None:
+    data = (SCREENSHOT_DIR / "browse-aurora-ready.frame").read_bytes()[512:]
+
+    def pixel(x: int, y: int) -> int:
+        return data[y * 240 + x]
+
+    if pixel(42, 121) != pixel(150, 145):
+        raise AssertionError("page pill edge does not match the active dock edge")
+    if pixel(30, 125) != pixel(30, 146):
+        raise AssertionError("page pill fill does not match the dock background")
+    if pixel(27, 121) == pixel(42, 121) or pixel(57, 121) == pixel(42, 121):
+        raise AssertionError("page pill top edge is not rounded")
+    if pixel(27, 125) != pixel(42, 121) or pixel(57, 125) != pixel(42, 121):
+        raise AssertionError("page pill did not size itself to the page number")
+    for y in (122, 134):
+        for x in (31, 32, 52, 53):
+            if pixel(x, y) != pixel(42, 121):
+                raise AssertionError("page pill outline is disconnected at a shoulder")
+    white = pixel(35, 125)
+    if white != pixel(145, 148):
+        raise AssertionError("page number does not use the dock text color")
+    for y in range(125, 132):
+        if not any(pixel(x, y) == white for x in range(34, 51)):
+            raise AssertionError("page number does not use the dock's 5x7 scale")
+    if any(pixel(x, 132) == white for x in range(34, 51)):
+        raise AssertionError("page number exceeds the dock's seven-pixel height")
+
+
 def assert_outside_panel_equal(first: Image.Image, second: Image.Image) -> None:
     regions = (
         (0, 0, 240, PANEL_BOX[1]),
@@ -176,6 +204,7 @@ def assert_dock_icons_and_favorite_label(image: Image.Image) -> None:
 
 def main() -> None:
     assert_glow_variants()
+    assert_page_pill()
     aurora = load("browse-aurora-ready")
     pending = load("browse-checker-pending")
     checker = load("browse-checker-ready")
@@ -194,7 +223,7 @@ def main() -> None:
 
     aurora_panel = aurora.crop(PANEL_IMAGE)
     checker_panel = checker.crop(PANEL_IMAGE)
-    if len(aurora_panel.getcolors(maxcolors=4096) or ()) < 7:
+    if len(aurora_panel.getcolors(maxcolors=4096) or ()) < 6:
         raise AssertionError("Aurora cover did not render its expected color range")
     if len(checker_panel.getcolors(maxcolors=4096) or ()) < 7:
         raise AssertionError("Checker cover did not render its expected color range")

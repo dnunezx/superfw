@@ -6,24 +6,29 @@
 
 > **YOUR SUPERCARD. POWERED UP.**
 >
-> Box art. Favorites. Seven-game pages. Custom colors. Same proven SuperFW engine
-> underneath.
+> Box art. Favorites. Seven-game pages. Page-at-a-glance. Custom colors. Same
+> proven SuperFW engine underneath.
 
 SuperR7 is an independent, GPL-licensed fork of
 [SuperFW](https://github.com/davidgfnet/superfw) for **SuperCard SD GBA flash
 carts**. It keeps the serious firmware technology and gives it a new
 game-library experience built for the GBA's 240-by-160 screen.
 
-Developed by **(dnunezx)**.
+Developed and hardware-tested by **Danny Nunez (dnunezx)** on SuperCard SD.
 
 ## The power-up
 
 - **Big cover art** — native 76-by-76 `.sfcov` covers.
 - **Seven games at once** — cover-focused rows with long-title support.
-- **Page controls** — Up/Down moves one game; Left/Right changes
-  seven-game pages and selects the first game.
+- **Page controls and position** — Up/Down moves one game; Left/Right changes
+  seven-game pages and selects the first game. Browse adds accelerated held
+  paging and a theme-colored `current/total` pill beneath the cover.
 - **Four-item dock** — Favorites, Recent, Browse, and Tools.
 - **Real Favorites** — save up to 200 games and launch them normally.
+- **Browse your way** — sort A–Z or Z–A, filter for GBA/GB/GBC, and hide
+  folders or unknown extensions from Browse.
+- **Safe list maintenance** — Reset Favorites and Reset Recent never remove
+  ROM files.
 - **Quick Launch** — launch now or open Options, Advanced, and Details.
 - **Make it yours** — four presets, custom colors, contrast control, and five
   wallpapers: None, Weave, Grid, Circuit, and Tech Frame.
@@ -76,10 +81,33 @@ SuperR7 retains SuperFW's major features:
 | Button | Library action |
 | --- | --- |
 | Up / Down | Previous or next game |
-| Left / Right | Previous or next seven-game page |
+| Left / Right | Previous or next seven-game page; hold to accelerate in Browse |
 | A | Open Quick Launch |
 | B | Go back |
+| Start | Open View & Sort in Browse |
 | Select | Remove a game from Favorites after confirmation |
+
+## Hardware checkpoint
+
+The latest confirmed functional build passed physical **SuperCard SD** testing
+on August 22, 2026.
+
+- Firmware size: **521,728 bytes**
+- Flash limit: **524,288 bytes**
+- Free space: **2,560 bytes**
+- SHA-256:
+  `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204`
+- Tested features include fixed-page navigation, the connected page pill,
+  Browse View & Sort, Reset Favorites/Recent, and the direct boot-logo-to-UI
+  handoff without the white transition frame.
+
+Current source identifies the SD release line in System Information with the
+build fingerprint **Luna 1.1 SD**. The final fingerprinted image remains a
+candidate until that exact binary completes its last chain-load check.
+
+Every new binary is a new candidate. Chain-load it before flashing it. Never
+flash an unverified development build. Exact hashes and rollback images are in
+the [hardware-validation record](docs/hardware-validation.md).
 
 ## Get it
 

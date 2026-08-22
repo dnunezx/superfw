@@ -8,5 +8,7 @@ See [`archive/`](archive/) for those historical packages and
 [`docs/hardware-validation.md`](../docs/hardware-validation.md) for the complete
 accepted lineage and current release gates.
 
-New public files use the form `superr7-vX.Y.Z.gba`; internal phase names are
-reserved for development history and rollback records.
+The Luna release line uses tags such as `Luna1.1` and matching SD firmware
+assets such as `SuperR7-SD-Luna1.1.gba`. Internal phase names and
+`*-hardware-test.gba` filenames are reserved for development history and
+rollback records.

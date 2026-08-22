@@ -54,6 +54,26 @@ def assert_seven_rows(name: str, selected_row: int = 0, x: int = 89) -> None:
             raise AssertionError(f"{name} row gap at y={y} was filled by a card")
 
 
+def assert_browse_page_pill() -> None:
+    data = frame("browse-aurora-ready")[512:]
+
+    def pixel(x: int, y: int) -> int:
+        return data[y * 240 + x]
+
+    if pixel(42, 121) != pixel(150, 145):
+        raise AssertionError("page pill edge does not match the active dock edge")
+    if pixel(30, 125) != pixel(30, 146):
+        raise AssertionError("page pill fill does not match the dock background")
+    if pixel(27, 121) == pixel(42, 121) or pixel(57, 121) == pixel(42, 121):
+        raise AssertionError("page pill top edge is not rounded")
+    if pixel(27, 125) != pixel(42, 121) or pixel(57, 125) != pixel(42, 121):
+        raise AssertionError("page pill did not size itself to the page number")
+    for y in (122, 134):
+        for x in (31, 32, 52, 53):
+            if pixel(x, y) != pixel(42, 121):
+                raise AssertionError("page pill outline is disconnected at a shoulder")
+
+
 def assert_wallpapers() -> None:
     names = (
         "wallpaper-none",
@@ -150,6 +170,7 @@ def main() -> None:
     appearance = visual.load("appearance-electric-blue-grid")
 
     assert_seven_rows("browse-aurora-ready")
+    assert_browse_page_pill()
     assert_seven_rows("tools-home", x=6)
     assert_seven_rows("appearance-electric-blue-grid", x=6)
     visual.assert_dock_selection(

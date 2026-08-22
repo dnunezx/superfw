@@ -34,13 +34,13 @@ callbacks:add("frame", function()
     shot("glow-red")
   elseif frame == 101 then
     press(C.GBA_KEY.SELECT)
-  elseif frame == 103 then
+  elseif frame == 107 then
     release(C.GBA_KEY.SELECT)
   elseif frame == 108 then
     shot("glow-cyan")
   elseif frame == 109 then
     press(C.GBA_KEY.SELECT)
-  elseif frame == 111 then
+  elseif frame == 115 then
     release(C.GBA_KEY.SELECT)
   elseif frame == 120 then
     shot("browse-aurora-ready")
@@ -109,6 +109,24 @@ callbacks:add("frame", function()
   elseif frame == 820 then
     shot("dock-tools")
   elseif frame == 830 then
+    press(C.GBA_KEY.DOWN)
+  elseif frame == 835 then
+    release(C.GBA_KEY.DOWN)
+  elseif frame == 840 then
+    press(C.GBA_KEY.DOWN)
+  elseif frame == 845 then
+    release(C.GBA_KEY.DOWN)
+  elseif frame == 850 then
+    press(C.GBA_KEY.DOWN)
+  elseif frame == 855 then
+    release(C.GBA_KEY.DOWN)
+  elseif frame == 860 then
+    press(C.GBA_KEY.A)
+  elseif frame == 865 then
+    release(C.GBA_KEY.A)
+  elseif frame == 900 then
+    shot("system-information")
+  elseif frame == 910 then
     local marker = io.open(output .. "complete.txt", "w")
     marker:write("mGBA 76x76 cover demo completed\n")
     marker:close()

@@ -377,6 +377,14 @@ _main_end:
   strb r1, [r0, #-6]   @ Flag stored at 0x03007FFA
   swi 0x0              @ Reset to RAM
 
+  .balign 4
+boot_logo_expand:
+  @ Two 1bpp source pixels expanded into four 8bpp Mode 4 pixels.
+  .byte 0,0,0,0
+  .byte 0,0,1,1
+  .byte 1,1,0,0
+  .byte 1,1,1,1
+
 boot_logo:
   @ Artwork selected by Danny Nunez (dnunezx). This 1bpp mask is a compact adaptation
   @ of the supplied stacked Super R7 wordmark; it is rendered at 2x scale.
@@ -434,20 +442,20 @@ boot_logo_pal:
 @ Draws the 1bpp logo at 2x scale.
 @ r0: logo source, r1: destination, r6: screen width in bytes
 draw_boot_logo:
+  adr r9, boot_logo_expand
   mov r3, $BOOT_LOGO_HEIGHT
   1:
+    add r7, r1, r6
     mov r2, $BOOT_LOGO_ROW_BYTES
     2:
       ldrb r4, [r0], #1
-      mov r5, $8
+      mov r5, $4
       3:
-        tst r4, $0x80
-        moveq r7, $0
-        movne r7, $1
-        orr r7, r7, lsl #8
-        strh r7, [r1, r6]
-        strh r7, [r1], #2
-        lsl r4, $1
+        and r10, r4, $0xc0
+        ldr r10, [r9, r10, lsr #4]
+        str r10, [r1], #4
+        str r10, [r7], #4
+        lsl r4, $2
         subs r5, $1
         bne 3b
       subs r2, $1
@@ -458,7 +466,6 @@ draw_boot_logo:
     bne 1b
 
   bx lr
-
 @ Copies data from the SDRAM/Flash to the desired SDRAM address
 @ Uses IWRAM as a buffer (2KiB chunks)
 @ r0: source address

@@ -45,6 +45,11 @@ static void wait_for_vblank() {
 }
 
 void setup_video() {
+#if defined(UI_BROWSER_V2) && !defined(SUPPORT_NORGAMES) && !defined(COVER_ART_DEMO)
+  // The ROM boot wrapper is already showing the completed SuperR7 logo in
+  // Mode 4 page 0. Keep it visible while the browser and its hidden first
+  // frame are prepared; the first menu flip will replace it on VBlank.
+#else
   // Stop screen, clear VRAM and palette RAM.
   REG_DISPCNT = 0x80;
   dma_memset16(MEM_VRAM, 0xffff, MEM_VRAM_SIZE / 2);
@@ -54,6 +59,7 @@ void setup_video() {
   // Setup BG mode 4, with single buffering, enable display now!
   wait_for_vblank();
   REG_DISPCNT = 0x4 | 0x1400 | 0x40;
+#endif
 }
 
 #define display_info_msg_fmt(msg, ...) {   \
@@ -186,6 +192,10 @@ static int main_gba() {
 #endif
 
   menu_render(1);
+#if defined(UI_BROWSER_V2) && !defined(SUPPORT_NORGAMES) && !defined(COVER_ART_DEMO)
+  // Keep the boot logo visible until the hidden first menu frame is complete.
+  wait_for_vblank();
+#endif
   menu_flip();
 
   unsigned prev_frame = frame_count;

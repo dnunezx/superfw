@@ -2,8 +2,8 @@
 
 ## Current documentation
 
-- [Interface](interface.md): the current browser, Favorites, Appearance, and
-  in-game-menu behavior.
+- [Interface](interface.md): the current browser, View & Sort, Favorites,
+  maintenance tools, Appearance, and in-game-menu behavior.
 - [Cover format](cover-format.md): the production 76-by-76 `.sfcov` format.
 - [Cover converter](cover-converter.md): converting artwork for SuperR7.
 - [Hardware validation](hardware-validation.md): accepted firmware lineage,
