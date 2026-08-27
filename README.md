@@ -4,67 +4,102 @@
   <img src="res/superr7-boot-logo-source.png" alt="SuperR7 logo" width="620">
 </p>
 
-> **YOUR SUPERCARD. POWERED UP.**
->
-> Box art. Favorites. Seven-game pages. Page-at-a-glance. Custom colors. Same
-> proven SuperFW engine underneath.
+<p align="center">
+  <strong>YOUR SUPERCARD. POWERED UP. TO THE EXTREME.</strong>
+</p>
+
 
 SuperR7 is an independent, GPL-licensed fork of
-[SuperFW](https://github.com/davidgfnet/superfw) for **SuperCard SD GBA flash
-carts**. It keeps the serious firmware technology and gives it a new
-game-library experience built for the GBA's 240-by-160 screen.
+[SuperFW](https://github.com/davidgfnet/superfw) for **- SuperCard SD GBA flash
+carts - SuperChis support is coming soon -** Underneath the extreme attitude is the proven SuperFW engine. Up
+front is a whole new cover-powered game library built for the GBA's
+240-by-160 screen.
 
-## The power-up
+## 41,160 ways to make it yours
 
-- **Big cover art** — native 76-by-76 `.sfcov` covers.
-- **Seven games at once** — cover-focused rows with long-title support.
-- **Page controls and position** — Up/Down moves one game; Left/Right changes
-  seven-game pages and selects the first game. Browse adds accelerated held
-  paging and a theme-colored `current/total` pill beneath the cover.
-- **Four-item dock** — Favorites, Recent, Browse, and Tools.
-- **Real Favorites** — save up to 200 games and launch them normally.
-- **Browse your way** — sort A–Z or Z–A, filter for GBA/GB/GBC, and hide
-  folders or unknown extensions from Browse. Your choices survive a reboot.
-- **Safe list maintenance** — Reset Favorites and Reset Recent never remove
-  ROM files.
-- **Quick Launch** — launch now or open Options, Advanced, and Details.
-- **Make it yours** — four presets, custom colors, contrast control, and five
-  wallpapers: None, Weave, Grid, Circuit, and Tech Frame.
-- **Matching in-game menu** — your selected colors and wallpaper follow you
-  into the game.
+Build your look from three independently selectable color roles:
 
-## See it in action
+- **Background** — the foundation of the interface.
+- **Accent** — dividers, details, and active interface elements.
+- **Selection** — highlighted cards, cover borders, dock highlights, and the
+  Browse page pill.
 
-| Cover-powered library | Quick Launch and Favorites |
+Each role can use any of **14 colors**: Black, Charcoal, Slate, Navy, Teal,
+Burgundy, Cyan, Blue, Purple, Red, Amber, Green, Ice, or White. Combine them
+with **five wallpapers**—None, Weave, Grid, Circuit, and Tech Frame—and three
+contrast modes: Auto, Dark, or Light.
+
+
+Want a great look immediately? Start with one of four built-in presets:
+**Electric Blue**, **Mutant Green**, **Stealth Black**, or **Chrome Silver**.
+
+
+SuperR7 doesn't just show your games. It **unleashes** them.
+
+- **MEGA-SIZED COVER POWER!** See native 76-by-76 `.sfcov` box art.
+- **SEVEN-GAME ATTACK!** Pack seven cover-focused game rows with long-title
+  support onto every page.
+- **TURBO PAGE ACTION!** Tap Left or Right to jump a full page. Hold the
+  button in Browse and the pages accelerate.
+- **THE FOUR-WAY POWER DOCK!** Hit Favorites, Recent, Browse, or Tools.
+- **FAVORITES!** Save up to 200 favorites. 
+- **SORT IT. FILTER IT. OWN IT!** Browse A–Z or Z–A, choose GBA/GB/GBC, and
+  hide folders or unknown extensions. Your choices survive a reboot.
+- **QUICK LAUNCH!** Launch immediately or charge into Options,
+  Advanced, and Details.
+- **MAXIMUM CUSTOMIZATION!** Mix 14 Background, Accent, and Selection colors
+  with five wallpapers and three contrast modes for 41,160 configurations.
+- **IN-GAME STYLE OVERDRIVE!** Your colors and wallpaper follow you into the
+  in-game menu.
+
+
+
+## Witness the power
+
+| Seven-game cover assault | Quick Launch impact |
 | :---: | :---: |
 | ![SuperR7 seven-row cover library](docs/screenshots/library-browser.png) | ![SuperR7 Quick Launch Add to Favorites action](docs/screenshots/quick-launch-favorites.png) |
-| **Tech Frame Appearance** | **Matching in-game menu** |
+| **Match your Game Boy: 41,160 ways to make it yours** | **Filter Your catalog** |
+| ![SuperR7 Mutant Green Favorites with Tech Frame and The Minish Cap selected](docs/screenshots/favorites-mutant-green-tech-frame.png) | ![SuperR7 View and Sort game filter](docs/screenshots/filter-view.png) |
+| **Make it yours** | **Matching in-game menu** |
 | ![SuperR7 Tech Frame Appearance settings](docs/screenshots/appearance-tech-frame.png) | ![SuperR7 matching in-game menu](docs/screenshots/in-game-menu.png) |
 
-SuperFW supplies the proven foundation. SuperR7 turns it into a cover-powered
-library.
+SuperFW supplies the proven foundation. SuperR7 cranks the game-library
+experience to eleven.
 
-SuperR7 keeps SuperFW's features, GPL license, credits, and compatible
-`/.superfw/` SD-card layout. The projects have different interfaces,
+SuperR7 preserves SuperFW's features, GPL license, credits, and compatible
+`/.superfw/` SD-card layout so your save files can come along.  The projects have different interfaces,
 roadmaps, and releases.
 
-## Add box art with SuperCover
+## Add the awesome with SuperCover
 
-[**SuperCover**](https://github.com/dnunezx/SuperCover) makes the cover setup
-easy:
+
+[**SuperCover**](https://github.com/dnunezx/SuperCover) turns your ROM folder
+into a SuperR7-ready cover collection:
 
 1. Pick your GBA ROM folder.
 2. Review the artwork matches.
 3. Export to `/.superfw/covers/` on your SuperCard SD.
 
-That's it. SuperCover scans your ROMs, creates SuperR7's
+**PICK. REVIEW. EXPORT. BOOM.** SuperCover scans your ROMs, creates SuperR7's
 76-by-76 cover files, and gives them the filenames the firmware expects.
 
-Want full manual control? Use the included
+### The almost-magic part
+
+SuperR7's production **SFCV v3** cover format was custom-made exclusively for
+SuperR7. Making cover art work took far more than shrinking a picture: it
+required a new 76-by-76 binary format, careful GBA palette allocation, color
+conversion to BGR555, indexed-pixel encoding, CRC-32 protection, strict file
+validation, safe filename matching, a responsive firmware loader and cache,
+desktop conversion tools, emulator tests, and repeated testing on real
+SuperCard SD hardware.
+
+Want total control? Take the manual route with the included
 [cover converter](docs/cover-converter.md).
 
 ## Original power under the hood
 
+The attitude is new. The serious firmware technology is battle-tested.
 SuperR7 retains SuperFW's major features:
 
 - SDHC and exFAT support.
@@ -74,40 +109,23 @@ SuperR7 retains SuperFW's major features:
 - Game Boy and Game Boy Color emulation through Goomba Color.
 - Per-game settings, patch cache, cheat files, and emulator support.
 
-## Controls
+## Master the controls
 
-| Button | Library action |
+| Button | Extreme library action |
 | --- | --- |
-| Up / Down | Previous or next game |
-| Left / Right | Previous or next seven-game page; hold to accelerate in Browse |
-| A | Open Quick Launch |
-| B | Go back |
-| Start | Open View & Sort in Browse |
-| Select | Remove a game from Favorites after confirmation |
+| Up / Down | Strike the previous or next game |
+| Left / Right | Blast to the previous or next seven-game page; hold to accelerate in Browse |
+| A | Unleash Quick Launch |
+| B | Retreat to the previous screen |
+| Start | Activate View & Sort in Browse |
 
-## Hardware checkpoint
 
-The latest confirmed functional build passed physical **SuperCard SD** testing
-on August 22, 2026.
+## Back up and test before you flash.
 
-- Firmware size: **521,728 bytes**
-- Flash limit: **524,288 bytes**
-- Free space: **2,560 bytes**
-- SHA-256:
-  `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204`
-- Tested features include fixed-page navigation, the connected page pill,
-  Browse View & Sort, Reset Favorites/Recent, and the direct boot-logo-to-UI
-  handoff without the white transition frame.
 
-Current source identifies the SD release line in System Information with the
-build fingerprint **Luna 1.1 SD**. The final fingerprinted image remains a
-candidate until that exact binary completes its last chain-load check.
+Chain-load it before flashing it. 
 
-Every new binary is a new candidate. Chain-load it before flashing it. Never
-flash an unverified development build. Exact hashes and rollback images are in
-the [hardware-validation record](docs/hardware-validation.md).
-
-## Get it
+## Get the power
 
 Versioned firmware downloads belong on
 [GitHub Releases](https://github.com/dnunezx/SuperR7/releases). Verify the
@@ -117,7 +135,9 @@ before considering an internal-flash installation.
 Need installation or recovery details? Use the inherited
 [SuperFW installation guide](https://superfw.davidgf.net/docs/install/flash/).
 
-## Build it
+Games, SuperCard SD hardware, and the Game Boy Advance are not included.
+
+## Build your own beast
 
 ```sh
 make BOARD=sd COMPRESSION_RATIO=10 superr7.gba
@@ -126,7 +146,7 @@ make BOARD=sd COMPRESSION_RATIO=10 superr7.gba
 Output: `superr7.gba`. Building is not hardware validation—test every new
 image.
 
-## Learn more
+## Enter the SuperR7 command center
 
 - [Interface and controls](docs/interface.md)
 - [Cover format](docs/cover-format.md)
@@ -135,9 +155,16 @@ image.
 
 ## Credits and license
 
-SuperR7-specific work is copyright (C) 2026 **Danny Nunez (dnunezx)**.
+SuperR7-specific work was done by **Danny Nunez (dnunezx)**.
 SuperR7 is based on SuperFW, primarily written by **David Guillen Fandos
 (davidgf)**. Upstream authorship and copyright notices are preserved.
 
 Licensed under the **GNU General Public License, version 3 or later**. See
 [LICENSE](LICENSE) and [CREDITS.md](CREDITS.md).
+
+---
+
+<p align="center">
+  <strong>SUPER R7!</strong><br>
+  <em>More covers. More control. More power. EXTREME!</em>
+</p>
