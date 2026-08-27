@@ -14,8 +14,6 @@ SuperR7 is an independent, GPL-licensed fork of
 carts**. It keeps the serious firmware technology and gives it a new
 game-library experience built for the GBA's 240-by-160 screen.
 
-Developed and hardware-tested by **Danny Nunez (dnunezx)** on SuperCard SD.
-
 ## The power-up
 
 - **Big cover art** — native 76-by-76 `.sfcov` covers.
