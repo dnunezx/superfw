@@ -57,6 +57,12 @@ const char *save_paths[] = {
 
 const char *savestates_paths[] = {
   "/SAVESTATE/",
+  "/.superfw/savestate/",
+};
+
+const char *savestates_paths_display[] = {
+  "/SAVESTATE/",
+  ".sfw/savestate",
 };
 
 const uint8_t animspd_lut[] = {
@@ -68,10 +74,11 @@ const uint8_t animspd_lut[] = {
 };
 
 // Menu settings
-uint32_t lang_id = 0;
-uint32_t recent_menu = 1;
-uint32_t hide_hidden = 0;
-uint32_t anim_speed = animspd_cnt / 2;
+uint8_t menu_theme = 0;
+uint8_t lang_id = 0;
+uint8_t recent_menu = 1;
+uint8_t hide_hidden = 0;
+uint8_t anim_speed = animspd_cnt / 2;
 
 #ifdef UI_BROWSER_V2
 uint32_t browser_sort_descending = 0;
@@ -83,25 +90,28 @@ uint32_t browser_hide_unknown = 0;
 // Default settings
 t_patch_policy patcher_default = PatchAuto;
 
-uint32_t boot_bios_splash = 0;   // Whether the BIOS boots to the splash screen
-uint32_t use_slowld = 0;         // Use slow mirrors for ROM loading, check loaded data.
-uint32_t use_fastew = 0;         // Overclock EWRAM while playing.
+uint8_t boot_bios_splash = 0;   // Whether the BIOS boots to the splash screen
+uint8_t use_slowld = 0;         // Use slow mirrors for ROM loading, check loaded data.
+uint8_t use_fastew = 0;         // Overclock EWRAM while playing.
+uint8_t use_verify_nor = 0;     // Verify flash writes
 
-uint32_t save_path_default = SaveSavegameDir;
-uint32_t state_path_default = StateSavestateDir;
+uint8_t save_path_default = SaveSavegameDir;
+uint8_t save_path_nor_default = SaveSavegameDir;
+uint8_t state_path_default = StateSavestateDir;
 
-uint32_t backup_sram_default = 0;  // Number of older SRAM save to keep as backup
+uint8_t backup_sram_default = 0;  // Number of older SRAM save to keep as backup
 
-uint32_t hotkey_combo = 0;  // Hotkey Combo number
-uint32_t enable_cheats = 0; // By default cheats are disabled (it's slightly faster)
+uint8_t hotkey_combo = 0;  // Hotkey Combo number
+uint8_t enable_cheats = 0; // By default cheats are disabled (it's slightly faster)
 
-uint32_t autoload_default = 1;
-uint32_t autosave_default = 1;
-uint32_t autosave_prefer_ds = 1;
-uint32_t ingamemenu_default = 1;
-uint32_t rtcpatch_default = 1;
+uint8_t autoload_default = 1;
+uint8_t autosave_default = 1;
+uint8_t autosave_prefer_ds = 1;
+uint8_t ingamemenu_default = 1;
+uint8_t rtcpatch_default = 1;
+uint8_t rtcspeed_default = 3;
+
 uint32_t rtcvalue_default = 45568800U;
-uint32_t rtcspeed_default = 3;
 
 // Setting loading/saving routines
 bool save_ui_settings() {
@@ -119,27 +129,30 @@ bool save_ui_settings() {
   uint16_t lc = lang_getcode();
   char buf[512];
   npf_snprintf(buf, sizeof(buf),
+    "theme=%u\n"
     "langcode=%c%c\n"
-    "recent_menu=%lu\n"
-    "anim_speed=%lu\n"
-    "hide_hidden=%lu\n"
+    "recent_menu=%u\n"
+    "anim_speed=%u\n"
+    "hide_hidden=%u\n"
 #ifdef UI_BROWSER_V2
-    "ui_preset=%lu\n"
-    "ui_wallpaper=%lu\n"
-    "ui_background=%lu\n"
-    "ui_accent=%lu\n"
-    "ui_selection=%lu\n"
-    "ui_contrast=%lu\n"
-    "browse_sort_descending=%lu\n"
-    "browse_game_filter=%lu\n"
-    "browse_hide_folders=%lu\n"
-    "browse_hide_unknown=%lu\n"
+    "ui_preset=%u\n"
+    "ui_wallpaper=%u\n"
+    "ui_background=%u\n"
+    "ui_accent=%u\n"
+    "ui_selection=%u\n"
+    "ui_contrast=%u\n"
+    "browse_sort_descending=%u\n"
+    "browse_game_filter=%u\n"
+    "browse_hide_folders=%u\n"
+    "browse_hide_unknown=%u\n"
 #endif
-    , (lc & 0xFF), (lc >> 8), recent_menu, anim_speed, hide_hidden
+    , menu_theme, (lc & 0xFF), (lc >> 8), recent_menu, anim_speed, hide_hidden
 #ifdef UI_BROWSER_V2
-    , ui_theme_preset, ui_wallpaper, ui_background_color, ui_accent_color,
-      ui_selection_color, ui_contrast, browser_sort_descending,
-      browser_game_filter, browser_hide_folders, browser_hide_unknown
+    , (unsigned int)ui_theme_preset, (unsigned int)ui_wallpaper,
+      (unsigned int)ui_background_color, (unsigned int)ui_accent_color,
+      (unsigned int)ui_selection_color, (unsigned int)ui_contrast,
+      (unsigned int)browser_sort_descending, (unsigned int)browser_game_filter,
+      (unsigned int)browser_hide_folders, (unsigned int)browser_hide_unknown
 #endif
   );
 
@@ -164,27 +177,29 @@ bool save_settings() {
   // Serialize the settings
   char buf[512];
   npf_snprintf(buf, sizeof(buf),
-    "hotkey_opt=%lu\n"
-    "boot_to_bios=%lu\n"
-    "save_path_policy=%lu\n"
-    "state_path_policy=%lu\n"
-    "sram_backup_count=%lu\n"
-    "enable_cheats=%lu\n"
-    "enable_slowld=%lu\n"
-    "enable_fastewram=%lu\n"
+    "hotkey_opt=%u\n"
+    "boot_to_bios=%u\n"
+    "save_path_policy=%u\n"
+    "save_path_nor_policy=%u\n"
+    "state_path_policy=%u\n"
+    "sram_backup_count=%u\n"
+    "enable_cheats=%u\n"
+    "enable_slowld=%u\n"
+    "enable_fastewram=%u\n"
+    "enable_norwrcheck=%u\n"
     "default_patcher=%u\n"
-    "default_igmenu=%lu\n"
-    "default_rtcpatch=%lu\n"
-    "default_rtcts=%lu\n"
-    "default_rtctick=%lu\n"
-    "default_loadgame=%lu\n"
-    "default_savegame=%lu\n"
-    "prefer_directsave=%lu\n",
-    hotkey_combo, boot_bios_splash, save_path_default, state_path_default,
-    backup_sram_default, enable_cheats, use_slowld, use_fastew,
-    (unsigned int)patcher_default, ingamemenu_default, rtcpatch_default,
-    rtcvalue_default, rtcspeed_default, autoload_default, autosave_default,
-    autosave_prefer_ds);
+    "default_igmenu=%u\n"
+    "default_rtcpatch=%u\n"
+    "default_rtctick=%u\n"
+    "default_loadgame=%u\n"
+    "default_savegame=%u\n"
+    "prefer_directsave=%u\n"
+    "default_rtcts=%u\n",
+    hotkey_combo, boot_bios_splash, save_path_default, save_path_nor_default,
+    state_path_default, backup_sram_default, enable_cheats, use_slowld, use_fastew,
+    use_verify_nor, (unsigned int)patcher_default, ingamemenu_default, rtcpatch_default,
+    rtcspeed_default, autoload_default, autosave_default, autosave_prefer_ds,
+    (unsigned int)rtcvalue_default);
 
   UINT wrbytes;
   FRESULT res = f_write(&fd, buf, strlen(buf), &wrbytes);
@@ -195,30 +210,21 @@ bool save_settings() {
 
 static void parse_settings(void *usr, const char *var, const char *value) {
   unsigned valu = parseuint(value);
-  if (!strcmp(var, "hotkey_opt"))
-    hotkey_combo = valu % hotkey_listcnt;
-  else if (!strcmp(var, "save_path_policy"))
-    save_path_default = valu % SaveDirCNT;
-  else if (!strcmp(var, "state_path_policy"))
-    state_path_default = valu % StateDirCNT;
-  else if (!strcmp(var, "sram_backup_count"))
-    backup_sram_default = valu;
+  if (!strcmp(var, "default_rtcts"))
+    rtcvalue_default = valu;
   else if (!strcmp(var, "default_patcher"))
     patcher_default = valu % PatchTotalCNT;
-  else if (!strcmp(var, "default_rtcts"))
-    rtcvalue_default = valu;
-  else if (!strcmp(var, "default_rtctick"))
-    rtcspeed_default = valu;
   else {
-    const struct {
+    static const struct {
       const char *s;
-      uint32_t *var;
+      uint8_t * const var;
     } bolset[] = {
       { "boot_to_bios",      &boot_bios_splash },
       { "enable_cheats",     &enable_cheats },
       { "default_igmenu",    &ingamemenu_default },
       { "enable_slowld",     &use_slowld },
       { "enable_fastewram",  &use_fastew },
+      { "enable_norwrcheck", &use_verify_nor },
       { "default_rtcpatch",  &rtcpatch_default },
       { "default_loadgame",  &autoload_default },
       { "default_savegame",  &autosave_default },
@@ -229,12 +235,31 @@ static void parse_settings(void *usr, const char *var, const char *value) {
         *bolset[i].var = valu & 1;
         break;
       }
+
+    static const struct {
+      const char *s;
+      uint8_t * const var;
+      const unsigned modval;
+    } uintset[] = {
+      { "save_path_policy",     &save_path_default,     SaveDirCNT },
+      { "save_path_nor_policy", &save_path_nor_default, SaveDirNORCNT },
+      { "state_path_policy",    &state_path_default,    StateDirCNT },
+      { "sram_backup_count",    &backup_sram_default,   MAX_BACKUP_CNT + 1 },
+      { "default_rtctick",      &rtcspeed_default,      RTC_SPEED_CNT },
+    };
+    for (unsigned i = 0; i < sizeof(uintset)/sizeof(uintset[0]); i++)
+      if (!strcmp(var, uintset[i].s)) {
+        *uintset[i].var = valu % uintset[i].modval;
+        break;
+      }
   }
 }
 
 static void parse_ui_settings(void *usr, const char *var, const char *value) {
   unsigned valu = parseuint(value);
-  if (!strcmp(var, "recent_menu"))
+  if (!strcmp(var, "theme"))
+    menu_theme = valu;
+  else if (!strcmp(var, "recent_menu"))
     recent_menu = valu;
   else if (!strcmp(var, "hide_hidden"))
     hide_hidden = valu;
@@ -311,34 +336,25 @@ void load_settings() {
 #endif
 }
 
-void sram_template_filename_calc(const char *rom, const char * extension, char *savefn) {
-  if (save_path_default == SaveRomName) {
+void sram_filename_calc(const char *rom, char *savefn, unsigned save_path) {
+  if (save_path == SaveRomName) {
     strcpy(savefn, rom);   // Use the full ROM path
   }
   else {
     const char *p = file_basename(rom);
-    const char *path = save_paths[save_path_default];
+    const char *path = save_paths[save_path];
     strcpy(savefn, path);   // Add the base path
     strcat(savefn, p);      // Append just the basename
   }
 
-  replace_extension(savefn, extension);
+  replace_extension(savefn, ".sav");
 }
 
 void savestate_filename_calc(const char *rom, char *statefn) {
-  if (state_path_default == StateRomName) {
-    strcpy(statefn, rom);   // Use the full ROM path
-  }
-  else {
-    const char *p = file_basename(rom);
-    strcpy(statefn, savestates_paths[state_path_default]);   // Add the base path
-    strcat(statefn, p);               // Append just the basename
-  }
+  const char *p = file_basename(rom);
+  strcpy(statefn, savestates_paths[state_path_default]);   // Add the base path
+  strcat(statefn, p);               // Append just the basename
   replace_extension(statefn, "");
-}
-
-void sram_filename_calc(const char *rom, char *savefn) {
-  sram_template_filename_calc(rom, ".sav", savefn);
 }
 
 static void parse_rom_load_settings(void *usr, const char *var, const char *value) {

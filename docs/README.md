@@ -8,6 +8,8 @@
 - [Cover converter](cover-converter.md): converting artwork for SuperR7.
 - [Hardware validation](hardware-validation.md): accepted firmware lineage,
   hashes, and release gates.
+- [SuperChis hardware test](superchis-hardware-test.md): safe backup,
+  chain-load, NOR, save, and internal-flash validation sequence.
 - [Cover emulator demo](cover-emulator-demo.md): testing production cover behavior in
   mGBA without flashing hardware.
 - [In-game-menu demo](ingame-menu-demo.md): testing the menu renderer in mGBA.

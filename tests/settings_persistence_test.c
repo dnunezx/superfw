@@ -33,6 +33,18 @@ unsigned parseuint(const char *value) {
   return strtoul(value, NULL, 10);
 }
 
+const char *file_basename(const char *path) {
+  const char *slash = strrchr(path, '/');
+  return slash ? slash + 1 : path;
+}
+
+void replace_extension(char *path, const char *extension) {
+  char *dot = strrchr(path, '.');
+  if (!dot)
+    dot = path + strlen(path);
+  strcpy(dot, extension);
+}
+
 void ui_theme_sanitize(void) {
   sanitize_calls++;
 }

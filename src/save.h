@@ -31,11 +31,8 @@
 
 
 // Calculate save game name based on config.
-void sram_filename_calc(const char *rom, char *savefn);
+void sram_filename_calc(const char *rom, char *savefn, unsigned save_path);
 void savestate_filename_calc(const char *rom, char *statefn);
-
-// Calculate save game template filename for a given extension.
-void sram_template_filename_calc(const char *rom, const char * extension, char *savefn);
 
 // Reads/Writes data to SRAM
 void read_sram_buffer(uint8_t *buffer, unsigned offset, unsigned len);

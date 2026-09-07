@@ -18,8 +18,6 @@ jobs:
 
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
       - name: Run C tests
         run: make -C tests
@@ -33,3 +31,32 @@ jobs:
         with:
           name: superr7-test-coverage-${{ github.sha }}
           path: tests/coverage/*
+
+  firmware-builds:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: sd
+            flavour: SD
+            max_bytes: 524288
+          - board: chis
+            flavour: Chis
+            max_bytes: 2097152
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y g++ gcc-arm-none-eabi python3
+
+      - name: Build and verify ${{ matrix.flavour }} firmware
+        run: |
+          make BOARD=${{ matrix.board }} clean
+          make BOARD=${{ matrix.board }} COMPRESSION_RATIO=10 superr7.gba
+          python3 tools/verify_firmware_image.py \
+            --max-bytes ${{ matrix.max_bytes }} \
+            --flavour ${{ matrix.flavour }} \
+            superr7.gba

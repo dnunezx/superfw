@@ -36,11 +36,12 @@ extern const t_combo_key hotkey_list[13];
 extern const uint8_t animspd_lut[5];
 #define animspd_cnt (sizeof(animspd_lut)/sizeof(animspd_lut[0]))
 
-enum { SaveSavegameDir = 0, SaveSavesDir = 1, SaveRomName = 2, SaveDirCNT = 3 };
-enum { StateSavestateDir = 0, StateRomName = 1, StateDirCNT = 2 };
+enum { SaveSavegameDir = 0, SaveSavesDir = 1, SaveRomName = 2, SaveDirNORCNT = 2, SaveDirCNT = 3 };
+enum { StateSavestateDir = 0, StateSuperFWSavestateDir = 1, StateDirCNT = 2 };
 
 extern const char *save_paths[2];
-extern const char *savestates_paths[1];
+extern const char *savestates_paths[2];
+extern const char *savestates_paths_display[2];
 
 // ROM loading and launching config settings
 typedef struct {
@@ -56,10 +57,11 @@ typedef struct {
 } t_rom_launch_settings;
 
 // Menu settings
-extern uint32_t lang_id;
-extern uint32_t recent_menu;
-extern uint32_t hide_hidden;
-extern uint32_t anim_speed;
+extern uint8_t menu_theme;
+extern uint8_t lang_id;
+extern uint8_t recent_menu;
+extern uint8_t hide_hidden;
+extern uint8_t anim_speed;
 
 #ifdef UI_BROWSER_V2
 #include "ui_theme.h"
@@ -81,21 +83,23 @@ extern uint32_t browser_hide_unknown;
 
 // Defaults/Settings
 extern t_patch_policy patcher_default;
-extern uint32_t boot_bios_splash;
-extern uint32_t use_slowld;
-extern uint32_t use_fastew;
-extern uint32_t save_path_default;
-extern uint32_t state_path_default;
-extern uint32_t backup_sram_default;
-extern uint32_t hotkey_combo;
-extern uint32_t enable_cheats;
-extern uint32_t autoload_default;
-extern uint32_t autosave_default;
-extern uint32_t autosave_prefer_ds;
-extern uint32_t ingamemenu_default;
-extern uint32_t rtcpatch_default;
+extern uint8_t boot_bios_splash;
+extern uint8_t use_slowld;
+extern uint8_t use_fastew;
+extern uint8_t use_verify_nor;
+extern uint8_t save_path_default;
+extern uint8_t save_path_nor_default;
+extern uint8_t state_path_default;
+extern uint8_t backup_sram_default;
+extern uint8_t hotkey_combo;
+extern uint8_t enable_cheats;
+extern uint8_t autoload_default;
+extern uint8_t autosave_default;
+extern uint8_t autosave_prefer_ds;
+extern uint8_t ingamemenu_default;
+extern uint8_t rtcpatch_default;
+extern uint8_t rtcspeed_default;
 extern uint32_t rtcvalue_default;
-extern uint32_t rtcspeed_default;
 
 // Setting load/store
 bool save_ui_settings();

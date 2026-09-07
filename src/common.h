@@ -23,6 +23,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "config.h"
 #include "emu.h"
 
 #define MAX(a, b) ((a > b) ? (a) : (b))
@@ -42,29 +43,6 @@
 #define BM_SET(bm, n)          ((bm)[BM_IDX(bm, n)] |=  BMMASK(bm, n))
 #define BM_CLR(bm, n)          ((bm)[BM_IDX(bm, n)] &= ~BMMASK(bm, n))
 #define BM_TEST(bm, n)         ((bm)[BM_IDX(bm, n)] &   BMMASK(bm, n))
-
-#define MAX_FN_LEN                 256
-#ifdef COVER_ART_DEMO
-#define FLASHG_MAXFN_CNT             2
-#else
-#define FLASHG_MAXFN_CNT           32            // No more than 32 games in NOR
-#endif
-
-#define SUPERFW_DIR               "/.superfw"
-#define ROMCONFIG_PATH            "/.superfw/config/"
-#define PATCHDB_PATH              "/.superfw/patches/"
-#define CHEATS_PATH               "/.superfw/cheats/"
-#define EMULATORS_PATH            "/.superfw/emulators/"
-#define GBC_EMULATOR_PATH         "/.superfw/emulators/gbc-emu.gba"
-#define SETTINGS_FILEPATH         "/.superfw/settings.txt"
-#define RECENT_FILEPATH           "/.superfw/recent.txt"
-#define FAVORITES_FILEPATH        "/.superfw/favorites.txt"
-#define UISETTINGS_FILEPATH       "/.superfw/ui-settings.txt"
-#define FLASHBACKUPTMP_FILEPATH   "/.superfw/flash_backup.tmp"
-#define FLASHBACKUP_FILEPTRN      "/.superfw/flash_backup-%02x%02x%02x%02x.bin"
-
-#define PENDING_SAVE_FILEPATH     "/.superfw/pending-save.txt"
-#define PENDING_SRAM_TEST         "/.superfw/pending-sram-test.txt"
 
 extern const uint8_t  dldi_payload[];
 extern const uint32_t dldi_payload_size;
@@ -259,9 +237,7 @@ static inline unsigned savetype_size(EnumSavetype st) {
   return 1 << lut[st];
 }
 
-static inline unsigned rtc_speed_cnt() {
-  return 6;
-}
+#define RTC_SPEED_CNT           6   // Sync with ingame_menu.c
 
 typedef void (*progress_fn)(unsigned done, unsigned total);
 typedef bool (*progress_abort_fn)(unsigned done, unsigned total);
@@ -287,7 +263,8 @@ unsigned prepare_sram_based_savegame(t_sram_load_policy loadp, t_sram_save_polic
 // Loads ROM header
 unsigned preload_gba_rom(const char *fn, uint32_t fs, t_rom_header *romh);
 // Loads a ROM file and launches it.
-unsigned load_gba_rom(const char *fn, uint32_t fs, const struct struct_t_patch *ptch,
+unsigned load_gba_rom(const char *fn, uint32_t fs, const char *savefn,
+                      const struct struct_t_patch *ptch,
                       const t_dirsave_info *dsinfo, bool ingame_menu,
                       const t_rtc_info *rtcinfo, unsigned cheats, progress_fn progress);
 // Launch from NOR
@@ -295,7 +272,7 @@ unsigned  flash_gba_nor(const char *fn, uint32_t fs, const t_rom_header *rom_hea
                         const struct struct_t_patch *ptch, bool dirsaving, bool ingame_menu, bool rtc_patches,
                         const uint8_t *blkmap, progress_fn progress, uint8_t *scratch, unsigned ssize);
 unsigned launch_gba_nor(
-  const char *romfn, const uint8_t *normap, unsigned blkcnts, const t_dirsave_info *dsinfo,
+  const char *romfn, const char *savefn, const uint8_t *normap, unsigned blkcnts, const t_dirsave_info *dsinfo,
   const t_rtc_info *rtcinfo, bool ingame_menu, unsigned cheats);
 
 unsigned load_extemu_rom(const char *fn, uint32_t fs, const t_emu_loader *ldinfo, progress_fn progress);
@@ -314,96 +291,6 @@ unsigned load_nds(const char *filename, const void *dldi_driver);
 const void *get_vfile_ptr(const char *fname);
 int get_vfile_size(const char *fname);
 
-// RTC patches
-extern uint16_t patch_rtc_probe[];
-extern uint16_t patch_rtc_getstatus[];
-extern uint16_t patch_rtc_gettimedate[];
-extern uint16_t patch_rtc_reset[];
-extern const uint32_t patch_rtc_probe_size;
-extern const uint32_t patch_rtc_getstatus_size;
-extern const uint32_t patch_rtc_gettimedate_size;
-extern const uint32_t patch_rtc_reset_size;
-
-// EEPROM patches
-extern uint16_t patch_eeprom_read_sram64k[];
-extern uint16_t patch_eeprom_write_sram64k[];
-extern const uint32_t patch_eeprom_read_sram64k_size;
-extern const uint32_t patch_eeprom_write_sram64k_size;
-
-extern uint16_t patch_eeprom_read_directsave[];
-extern uint16_t patch_eeprom_write_directsave[];
-extern const uint32_t patch_eeprom_read_directsave_size;
-extern const uint32_t patch_eeprom_write_directsave_size;
-
-// FLASH patches
-extern uint16_t patch_flash_read_sram64k[];
-extern uint16_t patch_flash_write_sector_sram64k[];
-extern uint16_t patch_flash_write_byte_sram64k[];
-extern uint16_t patch_flash_erase_sector_sram64k[];
-extern uint16_t patch_flash_erase_device_sram64k[];
-extern const uint32_t patch_flash_read_sram64k_size;
-extern const uint32_t patch_flash_write_byte_sram64k_size;
-extern const uint32_t patch_flash_erase_sector_sram64k_size;
-extern const uint32_t patch_flash_erase_device_sram64k_size;
-extern const uint32_t patch_flash_write_sector_sram64k_size;
-
-extern uint16_t patch_flash_read_sram128k[];
-extern uint16_t patch_flash_write_sector_sram128k[];
-extern uint16_t patch_flash_write_byte_sram128k[];
-extern uint16_t patch_flash_erase_sector_sram128k[];
-extern uint16_t patch_flash_erase_device_sram128k[];
-extern const uint32_t patch_flash_read_sram128k_size;
-extern const uint32_t patch_flash_write_byte_sram128k_size;
-extern const uint32_t patch_flash_erase_sector_sram128k_size;
-extern const uint32_t patch_flash_erase_device_sram128k_size;
-extern const uint32_t patch_flash_write_sector_sram128k_size;
-
-extern uint16_t patch_flash_read_directsave[];
-extern uint16_t patch_flash_write_sector_directsave[];
-extern uint16_t patch_flash_write_byte_directsave[];
-extern uint16_t patch_flash_erase_sector_directsave[];
-extern uint16_t patch_flash_erase_device_directsave[];
-extern const uint32_t patch_flash_read_directsave_size;
-extern const uint32_t patch_flash_write_byte_directsave_size;
-extern const uint32_t patch_flash_erase_sector_directsave_size;
-extern const uint32_t patch_flash_erase_device_directsave_size;
-extern const uint32_t patch_flash_write_sector_directsave_size;
-
-// Firmware update and flashing tools
-typedef struct {
-  uint32_t deviceid;
-  uint32_t size;         // Size in bytes
-  uint32_t regioncnt;    // Erase region count (ideally 1, or perhaps 0)
-  uint32_t blksize;      // Block size in bytes
-  uint32_t blkcount;     // Number of blocks
-  uint32_t blkwrite;     // Buffer writing capabilities (zero means disabled)
-} t_flash_info;
-extern t_flash_info flashinfo;
-
-bool check_superfw(const uint8_t *h, uint32_t *ver);
-bool validate_superfw_variant(const uint8_t *fw);
-bool validate_superfw_checksum(const uint8_t *fw, unsigned fwsize);
-
-typedef struct {
-  uint32_t baseaddr;
-  uint32_t sectorsize;
-  uint32_t sectorcount;
-  uint32_t currsect;
-  uint32_t timeout;
-} t_flash_erase_state;
-
-bool flash_identify(t_flash_info *info);
-bool flash_erase_chip();
-bool flash_erase_sector(uintptr_t addr);
-bool flash_erase_sectors(uint32_t baseaddr, unsigned sectsize, unsigned sectcount);
-void flash_read(uint32_t baseaddr, uint8_t *buf, unsigned size);
-bool flash_check_erased(uintptr_t addr, unsigned size);
-bool flash_program(uint32_t baseaddr, const uint8_t *buf, unsigned size);
-bool flash_program_buffered(uint32_t baseaddr, const uint8_t *buf, unsigned size, unsigned bufsize);
-bool flash_verify(uint32_t baseaddr, const uint8_t *buf, unsigned size);
-void flash_erase_fsm_start(t_flash_erase_state *st, uint32_t baseaddr, unsigned sectsize, unsigned sectorcnt);
-int flash_erase_fsm_step(t_flash_erase_state *st);
-
 // Test/validation stuff
 unsigned sram_test();
 int sdram_test(progress_abort_fn progcb);
@@ -412,6 +299,20 @@ unsigned sram_pseudo_check();
 int check_peding_sram_test();
 void program_sram_check();
 int sdbench_read(progress_abort_fn progcb);
+
+// Logging
+#if defined(ENABLE_DISK_LOGGING)
+  void write_log(const char *fname, int line, const char *format, ...);
+  #define WRITE_LOG(fmt, ...) write_log(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#elif defined(ENABLE_EMU_LOGGING)
+  void write_log_emu(const char *fname, int line, const char *format, ...);
+  #define WRITE_LOG(fmt, ...) write_log_emu(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#elif defined(ENABLE_UART_LOGGING)
+  void write_log_uart(const char *fname, int line, const char *format, ...);
+  #define WRITE_LOG(fmt, ...) write_log_uart(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#else
+  #define WRITE_LOG(...) do {} while(0)
+#endif
 
 #endif
 

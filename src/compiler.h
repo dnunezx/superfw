@@ -27,3 +27,4 @@
 #endif
 
 #define NOINLINE __attribute__((noinline))
+#define EXTERNAL __attribute__((used, externally_visible))

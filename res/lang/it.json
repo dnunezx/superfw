@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Normale",
     "MSG_UIS_SPD3": "Veloce",
     "MSG_UIS_SPD4": "Molto veloce",
-    "MSG_STILLRTC": "Bloccato"
+    "MSG_STILLRTC": "Bloccato",
+    "MSG_STATE_TYPE_PT": "Gli stati saranno in %s",
+    "MSG_SETT_SAVETX": "Salvataggi flash",
+    "MSG_SAVE_TYPE_PTX": "I salvataggi flash (per giochi supportati) sono in %s",
+    "MSG_SETT_VERNOR": "Verifica mem. flash",
+    "MSG_VERNOR_I": "Controlla ROMs scritte in mem flash"
 }

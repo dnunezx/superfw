@@ -27,6 +27,7 @@
 #include "fonts/font_render.h"
 #include "common.h"
 #include "fatfs/ff.h"
+#include "flash.h"
 
 // Global variables
 FATFS sdfs;          // FatFS mounted filesystem
@@ -135,6 +136,13 @@ uint32_t systime() {
 }
 
 static int main_gba() {
+  // Setup (if enabled) the SIO in UART mode so we can log stuff.
+  #ifdef ENABLE_UART_LOGGING
+    REG_RCNT   = 0x0000;
+    REG_SIOCNT = 0x0000;
+    REG_SIOCNT = 0x3583;  // UART MODE (115200bps)
+  #endif
+
   // Setup WAITCNT for faster SD-card access.
   REG_WAITCNT = 0x40c0;    // 0x8-0x9: Use 4/2 waitstates (default, slow for SDRAM)
                            // 0xA-0xB: Use 2/1 for fast SD interface access

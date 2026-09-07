@@ -20,6 +20,7 @@
 // be in the critical path of any useful stuff.
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "compiler.h"
 
@@ -88,4 +89,65 @@ size_t FNAME(strlen)(const char *s) {
   return ret;
 }
 
+NOINLINE EXTERNAL
+void * FNAME(memmove)(void *dst, const void *src, size_t n) {
+  unsigned char *d = dst;
+  const unsigned char *s = src;
+
+  if (d < s)
+    while (n--)
+      *d++ = *s++;
+  else {
+    d += n;
+    s += n;
+    while (n--)
+      *--d = *--s;
+  }
+
+  return dst;
+}
+
+NOINLINE EXTERNAL
+int FNAME(memcmp)(const void *a, const void *b, size_t n) {
+  const unsigned char *p = a, *q = b;
+
+  while (n--) {
+    if (*p != *q)
+      return (int)*p - (int)*q;
+    p++;
+    q++;
+  }
+
+  return 0;
+}
+
+NOINLINE EXTERNAL
+void * FNAME(memset)(void *s, int c, size_t n) {
+  unsigned char *p = s;
+  unsigned char b = (unsigned char)c;
+  uint32_t w = b * 0x01010101u;
+
+  while (n && ((uintptr_t)p & 3)) {
+    *p++ = b;
+    n--;
+  }
+
+  while (n >= 4) {
+    *(uint32_t *)p = w;
+    p += 4;
+    n -= 4;
+  }
+
+  while (n--)
+    *p++ = b;
+
+  return s;
+}
+
+NOINLINE EXTERNAL
+char *FNAME(strcpy)(char *dst, const char *src) {
+  char *d = dst;
+  while ((*d++ = *src++));
+  return dst;
+}
 

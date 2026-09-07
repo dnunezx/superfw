@@ -13,47 +13,74 @@ permissions:
   contents: write
 
 jobs:
-  build-candidate:
+  host-tests:
     runs-on: ubuntu-24.04
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          submodules: true
 
-      - name: Install build and test dependencies
-        run: sudo apt-get update && sudo apt-get install -y gcc gcc-arm-none-eabi lcov python3-pil
+      - name: Install test dependencies
+        run: sudo apt-get update && sudo apt-get install -y gcc lcov python3-pil
 
       - name: Run host tests
         run: |
           make -C tests
           python3 -m unittest discover -s tests -p '*_test.py'
 
-      - name: Build SuperR7 for SuperCard SD
+  build-candidate:
+    needs: host-tests
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: sd
+            flavour: SD
+            max_bytes: 524288
+          - board: chis
+            flavour: Chis
+            max_bytes: 2097152
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y g++ gcc-arm-none-eabi python3
+
+      - name: Build SuperR7 for ${{ matrix.flavour }}
         run: |
-          make BOARD=sd clean
-          make BOARD=sd COMPRESSION_RATIO=10 superr7.gba
+          make BOARD=${{ matrix.board }} clean
+          make BOARD=${{ matrix.board }} COMPRESSION_RATIO=10 superr7.gba
 
       - name: Verify and package candidate
+        shell: bash
         run: |
-          size=$(stat -c %s superr7.gba)
-          test "$size" -le 524288
-          mkdir -p dist
+          python3 tools/verify_firmware_image.py \
+            --max-bytes ${{ matrix.max_bytes }} \
+            --flavour ${{ matrix.flavour }} \
+            superr7.gba
+
           if [[ "$GITHUB_REF" == refs/tags/Luna* ]]; then
-            asset="SuperR7-SD-${GITHUB_REF_NAME}.gba"
+            base="SuperR7-${{ matrix.flavour }}-${GITHUB_REF_NAME}"
           else
-            asset="superr7.gba"
+            base="SuperR7-${{ matrix.flavour }}-${GITHUB_SHA:0:8}"
           fi
-          cp superr7.gba "dist/$asset"
-          sha256sum "dist/$asset" > "dist/$asset.sha256"
-          printf 'asset=%s\nsize=%s\ncommit=%s\n' \
-            "$asset" "$size" "$GITHUB_SHA" > dist/build-info.txt
+
+          mkdir -p dist
+          cp superr7.gba "dist/$base.gba"
+          cp superr7.gba "dist/$base.fw"
+          sha256sum "dist/$base.gba" "dist/$base.fw" > "dist/$base.sha256"
+          printf 'board=%s\nflavour=%s\nsize=%s\ncommit=%s\n' \
+            '${{ matrix.board }}' '${{ matrix.flavour }}' \
+            "$(stat -c %s superr7.gba)" "$GITHUB_SHA" \
+            > "dist/$base.build-info.txt"
 
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: superr7-candidate-${{ github.sha }}
+          name: superr7-candidate-${{ matrix.board }}-${{ github.sha }}
           path: dist/*
 
   draft-release:
@@ -62,22 +89,20 @@ jobs:
     runs-on: ubuntu-24.04
 
     steps:
-      - name: Download candidate
+      - name: Download candidates
         uses: actions/download-artifact@v4
         with:
-          name: superr7-candidate-${{ github.sha }}
+          pattern: superr7-candidate-*-${{ github.sha }}
           path: dist
+          merge-multiple: true
 
       - name: Create draft release
         run: |
-          asset="SuperR7-SD-${GITHUB_REF_NAME}.gba"
           gh release create "$GITHUB_REF_NAME" \
             --repo "$GITHUB_REPOSITORY" \
             --draft \
             --generate-notes \
             --title "SuperR7 $GITHUB_REF_NAME" \
-            "dist/$asset" \
-            "dist/$asset.sha256" \
-            dist/build-info.txt
+            dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

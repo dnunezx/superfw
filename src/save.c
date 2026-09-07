@@ -22,6 +22,7 @@
 
 #include "gbahw.h"
 #include "util.h"
+#include "compiler.h"
 #include "settings.h"
 #include "supercard_driver.h"
 #include "fatfs/ff.h"
@@ -112,6 +113,8 @@ bool wipe_sav_file(const char *fn) {
   }
   f_close(&fd);
 
+  WRITE_LOG("Wiped save file: %s", fn);
+
   return true;
 }
 
@@ -170,6 +173,8 @@ bool compare_save_sram(const char *fn) {
   }
   f_close(&fd);
 
+  WRITE_LOG("Compared file '%s' to SRAM contents: %s", fn, mism ? "mismatch" : "identical");
+
   return !mism;
 }
 
@@ -181,6 +186,8 @@ bool compare_save_sram(const char *fn) {
 // - Unlink i-(N+1) if present
 bool rotate_savefile(const char *templ_fn, unsigned max_backups) {
   char tmpfn[MAX_FN_LEN], dstfn[MAX_FN_LEN];
+
+  WRITE_LOG("Rotating save file '%s' (#backups: %d)", templ_fn, max_backups);
 
   // Backup renaming, f_rename doesn't like existing dest files tho.
   if (max_backups) {
@@ -316,6 +323,8 @@ bool program_sram_dump(const char *save_filename, unsigned backup_cnt) {
 
 // Erases the SRAM (using ones since it seems to be the most common mem type)
 void erase_sram() {
+  WRITE_LOG("Erasing SRAM");
+
   // Erase both 64KB banks (ensure we leave on bank 1, for write-enable)
   for (unsigned bankn = 0; bankn < 2; bankn++) {
     SRAM_MAP_BANK(bankn);
@@ -331,14 +340,20 @@ bool file_is_contiguous(const char *fn, LBA_t *lba) {
     return false;
 
   int iscont = 0;
-  if (FR_OK != test_contiguous_file(&fd, &iscont) || !iscont)
+  if (FR_OK != test_contiguous_file(&fd, &iscont))
     return false;
 
-  if (lba)
-    *lba = fd.obj.fs->database + fd.obj.fs->csize * (fd.obj.sclust - 2);
+  if (iscont) {
+    LBA_t lbaoff = fd.obj.fs->database + fd.obj.fs->csize * (fd.obj.sclust - 2);
+    if (lba)
+      *lba = lbaoff;
+    WRITE_LOG("File '%s' is contiguous with LBA %u", fn, lbaoff);
+  } else {
+    WRITE_LOG("File '%s' is non-contiguous", fn);
+  }
 
   f_close(&fd);
-  return true;
+  return iscont;
 }
 
 // Creates a copy, or an empty FF file (contiguous)
@@ -404,8 +419,10 @@ bool copy_save_contiguous_file(const char *fn, const char *dest, unsigned size) 
   return true;
 }
 
-__attribute__((noinline))
+NOINLINE
 unsigned prepare_sram_based_savegame(t_sram_load_policy loadp, t_sram_save_policy savep, const char *savefn) {
+  WRITE_LOG("Preparing SRAM-based save game. LdPol: %d SvPol: %d Save file: '%s'", loadp, savep, savefn);
+
   // Clear the SRAM before loading any data (avoid random garbage!), unless in manual mode ofc.
   if (loadp != SaveLoadDisable)
     erase_sram();
@@ -420,7 +437,8 @@ unsigned prepare_sram_based_savegame(t_sram_load_policy loadp, t_sram_save_polic
   if (savep == SaveReboot) {
     // Program auto-save on reboot, write basename to the config file
     char savetmpl[MAX_FN_LEN];
-    sram_template_filename_calc(savefn, "", savetmpl);
+    strcpy(savetmpl, savefn);
+    replace_extension(savetmpl, "");
     if (!program_sram_dump(savetmpl, backup_sram_default))
       return ERR_SAVE_CANTWRITE;
   }
@@ -432,8 +450,15 @@ unsigned prepare_sram_based_savegame(t_sram_load_policy loadp, t_sram_save_polic
   return 0;
 }
 
-__attribute__((noinline))
+NOINLINE
 unsigned prepare_savegame(t_sram_load_policy loadp, t_sram_save_policy savep, EnumSavetype stype, t_dirsave_info *dsinfo, const char *savefn) {
+
+  // Ensure the main superfw dir exists
+  f_mkdir(SUPERFW_DIR);
+
+  WRITE_LOG("Preparing save game. LdPol: %d SvPol: %d SavType: %d Uses DirSav: %d Save file: '%s'",
+            loadp, savep, stype, dsinfo ? 1 : 0, savefn);
+
   // Branch on the two main saving modes: DirectSave and SRAM-based saving.
   if (savep == SaveDirect) {
     if (loadp == SaveLoadDisable)

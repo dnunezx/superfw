@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "flash.h"
 #include "common.h"
 #include "util.h"
 #include "sha256.h"

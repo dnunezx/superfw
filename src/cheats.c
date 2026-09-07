@@ -144,7 +144,11 @@ int open_read_cheats(uint8_t *buffer, unsigned buffsize, const char *fn) {
     if (!p)
       break;       // Some path is way too long!
 
-    *p = 0;        // Add the string end char.
+    unsigned cnt = p - tmp + 1;
+    if (p > tmp && p[-1] == '\r')
+      p[-1] = 0;   // Accept CRLF cheat files too.
+    else
+      *p = 0;      // Add the string end char.
 
     // Skip leading characters.
     char *s = tmp;
@@ -190,7 +194,6 @@ int open_read_cheats(uint8_t *buffer, unsigned buffsize, const char *fn) {
     }
 
     // Consume bytes
-    unsigned cnt = strlen(tmp) + 1;
     memmove(&tmp[0], &tmp[cnt], bcount - cnt);
     bcount -= cnt;
   } while (bcount);

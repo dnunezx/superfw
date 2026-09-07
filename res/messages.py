@@ -112,6 +112,7 @@ en_strings = [
   "MSG_BOOT_TYPE_I1":  "Boots to BIOS (GBA reset)",
   "MSG_SAVE_TYPE_NR":  ".sav in the same dir as the ROM",
   "MSG_SAVE_TYPE_PT":  "Save file lives in %s dir",
+  "MSG_STATE_TYPE_PT": "Savestate files live in %s dir",
   "MSG_BACKUP_I":      "Keep the last N save files",
   "MSG_FASTSD_I":      "Use a fast ROM loading mechanism. Can result in crashes or incorrect reads in some devices",
   "MSG_FASTEW_I":      "Overclock EWRAM for some extra performance. Not available on NDS or GBA Micro",
@@ -247,16 +248,20 @@ en_strings = [
   "MSG_APPEAR_RESET":     "Reset theme",
   }),
   ("SUPPORT_NORGAMES", {
-  "MSG_NOR_EMPTY":  "Flash is empty",
-  "MSG_Q5_DELNORG": "Delete this game from flash memory?",
-  "MSG_Q6_CLRNOR":  "Do you want to format the intenal flash memory?",
-  "MSG_ERR_NORUPD": "Flash write failed!",                 # alertmsg
-  "MSG_ERR_NORSPC": "Insufficient disk space!",            # alertmsg
-  "MSG_NOR_WRITE":  "Write game to flash",
-  "MSG_NOR_LAUNCH": "Launch flash game",
-  "MSG_NOR_WROK":   "Game flashed successfully!",          # alertmsg
-  "MSG_NOR_CLOK":   "Flash erased successfully!",          # alertmsg
-  "MSG_TOOLS5_FCLR":"Erase flash",
+  "MSG_NOR_EMPTY":    "Flash is empty",
+  "MSG_Q5_DELNORG":   "Delete this game from flash memory?",
+  "MSG_Q6_CLRNOR":    "Do you want to format the internal flash memory?",
+  "MSG_ERR_NORUPD":   "Flash write failed!",                 # alertmsg
+  "MSG_ERR_NORSPC":   "Insufficient disk space!",            # alertmsg
+  "MSG_NOR_WRITE":    "Write game to flash",
+  "MSG_NOR_LAUNCH":   "Launch flash game",
+  "MSG_NOR_WROK":     "Game flashed successfully!",          # alertmsg
+  "MSG_NOR_CLOK":     "Flash erased successfully!",          # alertmsg
+  "MSG_TOOLS5_FCLR":  "Erase flash",
+  "MSG_SETT_SAVETX":  "Flash saves",
+  "MSG_SAVE_TYPE_PTX":"Save file lives (for in-flash games) in %s dir",
+  "MSG_SETT_VERNOR":  "Verify flashing",
+  "MSG_VERNOR_I":     "Checks ROMs written to flash",
   }),
 ]
 

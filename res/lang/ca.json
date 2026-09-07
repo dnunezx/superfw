@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Normal",
     "MSG_UIS_SPD3": "Ràpid",
     "MSG_UIS_SPD4": "Molt ràpid",
-    "MSG_STILLRTC": "Congelat"
+    "MSG_STILLRTC": "Congelat",
+    "MSG_STATE_TYPE_PT": "Els arxius d'estat (savestates) es guardaran al directory %s",
+    "MSG_SETT_SAVETX": "Guardat flash",
+    "MSG_SAVE_TYPE_PTX": "El fitxer de partida (per als jocs en la flash) es guarda al directori %s",
+    "MSG_SETT_VERNOR": "Verifica flash",
+    "MSG_VERNOR_I": "Comprova els jocs quan s'escriuen a la flash"
 }

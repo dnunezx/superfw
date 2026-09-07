@@ -23,6 +23,7 @@
 #include "gbahw.h"
 #include "fatfs/ff.h"
 #include "common.h"
+#include "patches.h"
 #include "patchengine.h"
 
 #pragma GCC optimize ("Os")

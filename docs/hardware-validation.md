@@ -12,6 +12,7 @@ source tree.
 
 | Date | State | Local image | Size | SHA-256 |
 | --- | --- | --- | ---: | --- |
+| 2026-09-06 | Candidate: Luna 1.2 RC1 Chis; exact chain-load pending | `SuperR7-Chis-Luna1.2-RC1.gba` | Pending final build | Pending final build |
 | 2026-08-22 | Candidate: Luna 1.1 SD fingerprint; exact chain-load pending | `SuperR7-SD-Luna1.1-hardware-test.gba` | Pending final tagged build | Pending final tagged build |
 | 2026-08-22 | Current: Browse controls, list resets, and clean logo-to-UI handoff | `superr7-logo-to-ui-no-white-flash-hardware-test.gba` | 521,728 | `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204` |
 | 2026-08-22 | Rollback: connected dynamic Browse page pill | `superr7-connected-page-pill-test.gba` | 520,704 | `136C0726E4758460BBE1E7988F4647F8429946F839B0E556A472FC0230482C36` |
@@ -47,15 +48,18 @@ attached to GitHub Releases instead of committed to this repository.
 
 ## Release gates
 
-Before publishing a firmware image:
+Before publishing a firmware image for either board:
 
-1. Build `superr7.gba` from the intended clean source tag.
-2. Confirm the final image remains below the 512 KiB limit.
+1. Build `superr7.gba` from the intended clean source tag with `BOARD=sd` or
+   `BOARD=chis` as appropriate.
+2. Verify the embedded flavour and confirm the final image remains below its
+   board limit: 512 KiB for SD or 2 MiB for Chis.
 3. Run the host and native mGBA regression suites.
-4. Chain-load that exact image on physical SuperCard SD hardware.
+4. Chain-load that exact image on matching physical hardware. For Chis, also
+   complete the [SuperChis NOR and save checklist](superchis-hardware-test.md).
 5. Record its byte size and SHA-256 here.
-6. Publish it as `SuperR7-SD-LunaX.Y.gba` with the matching `LunaX.Y` source
-   tag.
+6. Publish it as `SuperR7-SD-LunaX.Y.gba` or
+   `SuperR7-Chis-LunaX.Y.gba` with the matching `LunaX.Y` source tag.
 
 Internal phase names may remain in development history, but public downloads
 use normal semantic release versions.

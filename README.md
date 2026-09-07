@@ -10,8 +10,8 @@
 
 
 SuperR7 is an independent, GPL-licensed fork of
-[SuperFW](https://github.com/davidgfnet/superfw) for **- SuperCard SD GBA flash
-carts - SuperChis support is coming soon -** Underneath the extreme attitude is the proven SuperFW engine. Up
+[SuperFW](https://github.com/davidgfnet/superfw) for **SuperCard SD and
+SuperChis GBA flash carts**. Underneath the extreme attitude is the proven SuperFW engine. Up
 front is a whole new cover-powered game library built for the GBA's
 240-by-160 screen.
 
@@ -120,10 +120,12 @@ SuperR7 retains SuperFW's major features:
 | Start | Activate View & Sort in Browse |
 
 
-## Back up and test before you flash.
+## Back up and test before you flash
 
-
-Chain-load it before flashing it. 
+Firmware is board-specific. Confirm whether the image says `SD` or `Chis`,
+back up the cart's current firmware, and chain-load the `.gba` before using the
+identical `.fw` image for an internal-flash installation. Never put an SD build
+on SuperChis or a Chis build on SuperCard SD.
 
 ## Get the power
 
@@ -141,10 +143,13 @@ Games, SuperCard SD hardware, and the Game Boy Advance are not included.
 
 ```sh
 make BOARD=sd COMPRESSION_RATIO=10 superr7.gba
+make BOARD=chis COMPRESSION_RATIO=10 superr7.gba
 ```
 
-Output: `superr7.gba`. Building is not hardware validation—test every new
-image.
+Each command outputs `superr7.gba`; move or rename the first output before
+building the other board. Building is not hardware validation—test every new
+image. See the [SuperChis hardware test](docs/superchis-hardware-test.md) for
+the safe chain-load-first sequence.
 
 ## Enter the SuperR7 command center
 

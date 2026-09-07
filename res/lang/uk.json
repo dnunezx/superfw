@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Звичайно",
     "MSG_UIS_SPD3": "Швидко",
     "MSG_UIS_SPD4": "Дуже швидко",
-    "MSG_STILLRTC": "Заморожено"
+    "MSG_STILLRTC": "Заморожено",
+    "MSG_STATE_TYPE_PT": "Файли збереження в теці %s",
+    "MSG_SETT_SAVETX": "Флеш збережено",
+    "MSG_SAVE_TYPE_PTX": "Збереження знаходяться в теці %s",
+    "MSG_SETT_VERNOR": "Перевірка флешу",
+    "MSG_VERNOR_I": "Перевірити РОМи записані у флеш"
 }

@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Обычно",
     "MSG_UIS_SPD3": "Быстро",
     "MSG_UIS_SPD4": "Оч. быстро",
-    "MSG_STILLRTC": "Заморожено"
+    "MSG_STILLRTC": "Заморожено",
+    "MSG_STATE_TYPE_PT": "Файлы состояния в папке %s",
+    "MSG_SETT_SAVETX": "Флеш сохранён",
+    "MSG_SAVE_TYPE_PTX": "Файлы сохранений в папке %s",
+    "MSG_SETT_VERNOR": "Проверка флеша",
+    "MSG_VERNOR_I": "Проверить РОМы записанные во флеш"
 }

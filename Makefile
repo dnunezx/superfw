@@ -1,14 +1,16 @@
 
-VERSION_WORD := 0x00000014
+VERSION_WORD := 0x00000015
 VERSION_SLUG_WORD := $(shell git rev-parse --short=8 HEAD || echo FFFFFFFF)
 
 PREFIX		:= arm-none-eabi-
 CC		:= $(PREFIX)gcc
 CXX		:= $(PREFIX)g++
+CPP		:= $(PREFIX)cpp
 OBJDUMP		:= $(PREFIX)objdump
 OBJCOPY		:= $(PREFIX)objcopy
 
 COMPRESSION_RATIO ?= 4
+HOSTCXX ?= g++
 
 GLOBAL_DEFINES = -D__GBA__
 
@@ -39,9 +41,35 @@ endif
 
 FWBINFILES=firmware.ewram.gba res/patches.db res/fonts.pack
 
+ifeq ($(BOARD),chis)
+  FWBINFILES=firmware.ewram.gba res/patches.db res/fonts-ext.pack
+endif
+
+ifeq ($(ENABLE_DISK_LOGGING),1)
+  PAYLOADFLAGS += -DENABLE_DISK_LOGGING
+endif
+ifeq ($(ENABLE_EMU_LOGGING),1)
+  PAYLOADFLAGS += -DENABLE_EMU_LOGGING
+endif
+ifeq ($(ENABLE_UART_LOGGING),1)
+  PAYLOADFLAGS += -DENABLE_UART_LOGGING
+endif
+
 ifeq ($(COMPRESS_FIRMWARE),1)
   GLOBAL_DEFINES += -DCOMPRESS_FONTS -DCOMPRESS_PATCHES -DCOMPRESS_FIRMWARE
   FWBINFILES := $(addsuffix .comp,$(FWBINFILES))
+endif
+
+SUPERR7_UI_PAYLOAD=firmware.ui.ewram.gba
+SUPERR7_UI_V3_PAYLOAD=firmware.ui.v3.ewram.gba
+SUPERR7_PATCH_ASSET=res/patches.db
+SUPERR7_FONT_ASSET=$(if $(filter chis,$(BOARD)),res/fonts-ext.pack,res/fonts.pack)
+
+ifeq ($(COMPRESS_FIRMWARE),1)
+  SUPERR7_UI_PAYLOAD := $(SUPERR7_UI_PAYLOAD).comp
+  SUPERR7_UI_V3_PAYLOAD := $(SUPERR7_UI_V3_PAYLOAD).comp
+  SUPERR7_PATCH_ASSET := $(SUPERR7_PATCH_ASSET).comp
+  SUPERR7_FONT_ASSET := res/fonts.pack.comp
 endif
 
 ifeq ($(BUNDLE_GBC_EMULATOR),1)
@@ -60,7 +88,7 @@ endif
 BASEFLAGS=$(GLOBAL_DEFINES) -mcpu=arm7tdmi -mtune=arm7tdmi
 
 CFLAGS=-O2 -ggdb \
-       $(BASEFLAGS) \
+       $(BASEFLAGS) $(PAYLOADFLAGS) \
        -DFW_MAX_SIZE_KB=$(MAXFSIZE) -DFW_FLAVOUR="\"$(FWFLAVOUR)\"" \
        -DSC_FAST_ROM_MIRROR="use_fast_mirror()" \
        -DSD_PREERASE_BLOCKS_WRITE \
@@ -125,6 +153,7 @@ INGAME_DEMO_INFILES=tests/ingame_menu_demo.c \
 
 INFILES=src/gba_ewram_crt0.S \
         src/main.c \
+        src/log.c \
         src/cimpl.c \
         src/settings.c \
         src/loader.c \
@@ -134,6 +163,7 @@ INFILES=src/gba_ewram_crt0.S \
         src/patches.S \
         src/menu.c \
         src/cover.c \
+        src/recent.c \
         src/cheats.c \
         src/flash.c \
         src/sha256.c \
@@ -167,22 +197,22 @@ all:	$(FWBINFILES) $(BIEMUFILES) directsave.payload ingame_trampoline.payload
 	# Fix the header/checksum.
 	./tools/finalize_gba_image.py superfw.gba
 
-superfw-ui.gba: firmware.ui.ewram.gba.comp res/patches.db.comp res/fonts.pack.comp $(BIEMUFILES) directsave.payload ingame_trampoline.payload
-	$(CC) $(CFLAGS) -DFW_EWRAM_PAYLOAD='"firmware.ui.ewram.gba.comp"' \
+superfw-ui.gba: $(SUPERR7_UI_PAYLOAD) $(SUPERR7_PATCH_ASSET) $(SUPERR7_FONT_ASSET) $(BIEMUFILES) directsave.payload ingame_trampoline.payload
+	$(CC) $(CFLAGS) -DFW_EWRAM_PAYLOAD='"$(SUPERR7_UI_PAYLOAD)"' \
 		-o firmware.ui.elf rom_boot.S -T ldscripts/gba_romboot.ld -nostartfiles -nostdlib \
 		-Wl,--defsym,MAX_FLASH_SIZE=$(MAXFSIZE)K
 	$(OBJCOPY) --output-target=binary firmware.ui.elf superfw-ui.gba
 	./tools/finalize_gba_image.py superfw-ui.gba
 
-superfw-ui-v3.gba: firmware.ui.v3.ewram.gba.comp res/patches.db.comp res/fonts.pack.comp $(BIEMUFILES) directsave.payload ingame_trampoline.payload
-	$(CC) $(CFLAGS) -DCOVER_ART_V3 -DFW_EWRAM_PAYLOAD='"firmware.ui.v3.ewram.gba.comp"' \
+superfw-ui-v3.gba: $(SUPERR7_UI_V3_PAYLOAD) $(SUPERR7_PATCH_ASSET) $(SUPERR7_FONT_ASSET) $(BIEMUFILES) directsave.payload ingame_trampoline.payload
+	$(CC) $(CFLAGS) -DCOVER_ART_V3 -DFW_EWRAM_PAYLOAD='"$(SUPERR7_UI_V3_PAYLOAD)"' \
 		-o firmware.ui.v3.elf rom_boot.S -T ldscripts/gba_romboot.ld -nostartfiles -nostdlib \
 		-Wl,--defsym,MAX_FLASH_SIZE=$(MAXFSIZE)K
 	$(OBJCOPY) --output-target=binary firmware.ui.v3.elf superfw-ui-v3.gba
 	./tools/finalize_gba_image.py superfw-ui-v3.gba
 
-# Official SuperR7 SD build. Keep the legacy target available for comparison
-# while the standalone fork establishes its release workflow.
+# Official board-aware SuperR7 build. BOARD selects the cartridge-specific
+# payload, fonts, I/O implementation, and flash-size ceiling.
 superr7.gba: superfw-ui-v3.gba
 	cp superfw-ui-v3.gba superr7.gba
 
@@ -287,17 +317,17 @@ firmware.ui.v3.ewram.gba.comp:	firmware.ui.v3.ewram.gba ./upkr.elf
 %.db.comp:	%.db ./upkr.elf
 	./upkr.elf -l $(COMPRESSION_RATIO) $< $@
 
-%.pack.comp:	%.pack apultra/apultra
-	./apultra/apultra $< $@
+%.pack.comp:	%.pack apultra.elf
+	./apultra.elf $< $@
 
 %.ld.i:	%.ld
-	cpp $< -o $@
+	$(CPP) $< -o $@
 
-apultra/apultra:
-	make -C apultra
+apultra.elf:	tools/apultra.cc
+	$(HOSTCXX) -std=c++20 -O3 $< -o $@
 
-upkr.elf:
-	g++ -o upkr.elf upkr.cc -O3 -ffast-math
+upkr.elf:	tools/upkr.cc
+	$(HOSTCXX) -o $@ $< -O3 -ffast-math
 
 clean:
 	rm -f ldscripts/*.i *.gba *.elf *.payload *.map res/*.comp emu/*.comp *.comp src/menu_messages.h src/messages_data.h

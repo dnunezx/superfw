@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "gbahw.h"
+#include "compiler.h"
 #include "save.h"
 #include "patchengine.h"
 #include "settings.h"
@@ -33,6 +34,7 @@
 #include "common.h"
 #include "util.h"
 #include "flash_mgr.h"
+#include "flash.h"
 
 // Here we have the ROM loading routines.
 
@@ -180,8 +182,14 @@ void load_ingame_menu(
   igm->menu_wallpaper = UiWallpaperNone;
 #endif
 
-  if (savefn)
-    memcpy32(igm->savefile_pattern, savefn, sizeof(igm->savefile_pattern));
+  // Calculate the basename, so we can produce proper sav/backup files
+  // Only used if saving is enabled and DirSav is disabled.
+  if (savefn && !useds) {
+    char save_basename[MAX_FN_LEN];
+    strcpy(save_basename, savefn);
+    replace_extension(save_basename, "");
+    memcpy32(igm->savefile_pattern, save_basename, sizeof(igm->savefile_pattern));
+  }
   else
     memset32(igm->savefile_pattern, 0, sizeof(igm->savefile_pattern));
 
@@ -228,9 +236,10 @@ unsigned preload_gba_rom(const char *fn, uint32_t fs, t_rom_header *romh) {
   return err ? ERR_LOAD_BADROM : 0;
 }
 
-__attribute__((noinline))
+NOINLINE
 unsigned load_gba_rom(
   const char *fn, uint32_t fs,
+  const char *savefn,
   const t_patch *ptch,
   const t_dirsave_info *dsinfo,
   bool ingame_menu,
@@ -282,16 +291,7 @@ unsigned load_gba_rom(
   if (ingame_menu) {
     char sfn[MAX_FN_LEN];
     savestate_filename_calc(fn, sfn);
-    if (dsinfo) {
-      // If DirSave is enabled, we disable the menu save facilities.
-      load_ingame_menu(igm_addr, igm_space, true, NULL, sfn, use_rtc_patches, cheats);
-    } else {
-      // Calculate the basename, so we can produce proper sav/backup files
-      char save_basename[MAX_FN_LEN];
-      sram_template_filename_calc(fn, "", save_basename);
-
-      load_ingame_menu(igm_addr, igm_space, false, save_basename, sfn, use_rtc_patches, cheats);
-    }
+    load_ingame_menu(igm_addr, igm_space, dsinfo, savefn, sfn, use_rtc_patches, cheats);
   }
 
   // Proceed to load the ROM
@@ -387,13 +387,14 @@ unsigned load_gba_rom(
   // Set the ROM into read only mode, disable SD card reader as well. Maps SRAM bank 0.
   set_supercard_mode(MAPPED_SDRAM, false, false);
 
+  REG_WAITCNT = 0x4000;
   launch_reset(boot_bios_splash, use_fastew);
 
   return 0;
 }
 
 // Flashes a game to NOR patching it as necessary. This includes DirSav as well as IGM.
-__attribute__((noinline))
+NOINLINE
 unsigned flash_gba_nor(
   const char *fn, uint32_t fs,
   const t_rom_header *rom_header,
@@ -474,7 +475,7 @@ unsigned flash_gba_nor(
       }
     }
 
-    // Go ahead and erase the blocks, then program them.
+    // Write flash blocks.
     for (uint32_t offset = 0; offset < ssize && offset + bigoff < fs; offset += flashinfo.blksize) {
       uint32_t absoff = offset + bigoff;
       uint32_t flashaddr = GBA_ROM_BASE_WS1 + absoff;
@@ -482,7 +483,13 @@ unsigned flash_gba_nor(
         progress((bigoff + ssize / 4 + offset * 3/4) >> 8, fs >> 8);
 
       unsigned toflash = MIN(flashinfo.blksize, fs - absoff);
-      if (!flash_program_buffered(flashaddr, &scratch[offset], toflash, flashinfo.blkwrite)) {
+      bool wr_ok = flash_program_buffered(flashaddr, &scratch[offset], toflash, flashinfo.blkwrite);
+
+      // Check the written block if so configured
+      if (wr_ok && use_verify_nor)
+        wr_ok = flash_verify(flashaddr, &scratch[offset], toflash);
+
+      if (!wr_ok) {
         f_close(&fd);
         reset_superchis_normap();
         return ERR_FLASH_OP;
@@ -494,9 +501,9 @@ unsigned flash_gba_nor(
   return 0;
 }
 
-__attribute__((noinline))
+NOINLINE
 unsigned launch_gba_nor(
-  const char *romfn,
+  const char *romfn, const char *savefn,
   const uint8_t *normap, unsigned blkcnts,
   const t_dirsave_info *dsinfo,
   const t_rtc_info *rtcinfo,
@@ -515,16 +522,7 @@ unsigned launch_gba_nor(
   if (ingame_menu) {
     char sfn[MAX_FN_LEN];
     savestate_filename_calc(romfn, sfn);
-    if (dsinfo) {
-      // If DirSave is enabled, we disable the menu save facilities.
-      load_ingame_menu(igm_addr, igm_space, true, NULL, sfn, use_rtc_patches, cheats);
-    } else {
-      // Calculate the basename, so we can produce proper sav/backup files
-      char save_basename[MAX_FN_LEN];
-      sram_template_filename_calc(romfn, "", save_basename);
-
-      load_ingame_menu(igm_addr, igm_space, false, save_basename, sfn, use_rtc_patches, cheats);
-    }
+    load_ingame_menu(igm_addr, igm_space, dsinfo, savefn, sfn, use_rtc_patches, cheats);
   }
 
   if (dsinfo)
@@ -539,13 +537,14 @@ unsigned launch_gba_nor(
   // Set the ROM into read only mode, disable SD card reader as well.
   set_supercard_mode(MAPPED_FIRMWARE, false, false);
 
+  REG_WAITCNT = 0x4000;
   launch_reset(boot_bios_splash, use_fastew);
 
   return 0;
 }
 
 // Generic-emulator (ie. NES, SMS, ...) loader
-__attribute__((noinline))
+NOINLINE
 unsigned load_extemu_rom(const char *fn, uint32_t fs, const t_emu_loader *ldinfo, progress_fn progress) {
   FIL fd;
   uint8_t *ptr = (uint8_t*)(GBA_ROM_ADDR);

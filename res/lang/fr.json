@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Normale",
     "MSG_UIS_SPD3": "Rapide",
     "MSG_UIS_SPD4": "Très rapide",
-    "MSG_STILLRTC": "Gelé"
+    "MSG_STILLRTC": "Gelé",
+    "MSG_STATE_TYPE_PT": "Les fichiers Savestate sont sauvegardés dans le dossier %s",
+    "MSG_SETT_SAVETX": "Sauvegardes Flash",
+    "MSG_SAVE_TYPE_PTX": "Les fichiers de sauvegardes (pour les jeux dans la mémoire flash) sont sauvegardés sans le répertoire %s",
+    "MSG_SETT_VERNOR": "Vérif. flashing",
+    "MSG_VERNOR_I": "Vérifier que les ROMs sont inscrites dans la mémoire flash"
 }

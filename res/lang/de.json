@@ -6,7 +6,7 @@
     "MSG_Q2_SRAMTST": "Nach diesem Test musst du deinen GBA für ca. 2 Minuten ausschalten. Fortfahren?",
     "MSG_PATCHGEN_OK": "Patch-Erstellung fertig!",
     "MSG_SRAMTST_RDY": "Du kannst jetzt ausschalten!",
-    "MSG_SRAMTST_OK": "SRAM-Test bestanden!",
+    "MSG_SRAMTST_OK": "SRAM-Test erfolgreich!",
     "MSG_SRAMTST_FAIL": "SRAM-Test fehlgeschlagen!",
     "MSG_Q_YES": "Ja",
     "MSG_Q_NO": "Nein",
@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Normal",
     "MSG_UIS_SPD3": "Schnell",
     "MSG_UIS_SPD4": "Sehr schnell",
-    "MSG_STILLRTC": "Eingefroren"
+    "MSG_STILLRTC": "Eingefroren",
+    "MSG_STATE_TYPE_PT": "Savestate-Daten liegen im %s-Pfad",
+    "MSG_SETT_SAVETX": "FLASH-Speicherdaten",
+    "MSG_SAVE_TYPE_PTX": "Speicherdaten (für Spiele im FLASH-Speicher) liegen im %s-Pfad",
+    "MSG_SETT_VERNOR": "Prüfe FLASH-Spiele",
+    "MSG_VERNOR_I": "Prüft ROMs, die in FLASH-Speicher geschrieben werden"
 }

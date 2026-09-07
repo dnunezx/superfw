@@ -726,14 +726,14 @@ _end_bootloader:
 
 @ apack compressed assets!
 payload_ewram:
+  #ifndef FW_EWRAM_PAYLOAD
   #if defined(COMPRESS_FIRMWARE)
-    #ifndef FW_EWRAM_PAYLOAD
-      #define FW_EWRAM_PAYLOAD "firmware.ewram.gba.comp"
-    #endif
-    .incbin FW_EWRAM_PAYLOAD
+    #define FW_EWRAM_PAYLOAD "firmware.ewram.gba.comp"
   #else
-    .incbin "firmware.ewram.gba"
+    #define FW_EWRAM_PAYLOAD "firmware.ewram.gba"
   #endif
+  #endif
+  .incbin FW_EWRAM_PAYLOAD
   .balign 4
 payload_ewram_end:
 

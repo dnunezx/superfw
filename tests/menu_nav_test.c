@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "menu_nav.h"
+#define FW_FLAVOUR "SD"
 #include "superr7.h"
 
 static bool flush_ok(void) {
@@ -20,7 +21,7 @@ static void move(int *selector, int *seloff, int count,
 }
 
 int main(void) {
-  assert(strcmp(SUPERR7_BUILD_FINGERPRINT, "Luna 1.1 SD") == 0);
+  assert(strcmp(SUPERR7_BUILD_FINGERPRINT, "Luna 1.2 RC1 SD") == 0);
 
   int selector = 0;
   int seloff = 0;

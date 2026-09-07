@@ -10,6 +10,8 @@
 
 - `finalize_gba_image.py`: pad a GBA image and finalize its header, size, and
   firmware hash fields.
+- `verify_firmware_image.py`: reject oversized, corrupt, or wrong-board
+  release images and print their exact SHA-256.
 - `patch_ingame_menu_test_rom.py`: inject the in-game-menu payload into a test
   ROM that already contains the required IRQ patch.
 - `mgba-*.lua`: scripted native-resolution emulator captures and regression

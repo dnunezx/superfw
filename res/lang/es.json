@@ -21,7 +21,7 @@
     "MSG_SETT_BOOT": "Inicio del juego",
     "MSG_SETT_SAVET": "Dir. guardado",
     "MSG_SETT_SAVEBK": "Núm. copias backup",
-    "MSG_SETT_STATET": "Ruta guardado",
+    "MSG_SETT_STATET": "Dir. savestates",
     "MSG_SETT_CHTEN": "Activar cheats",
     "MSG_TOOLS0_SDRAM": "Test memoria SDRAM",
     "MSG_TOOLS1_SRAM": "Test memoria SRAM",
@@ -218,5 +218,10 @@
     "MSG_UIS_SPD2": "Normal",
     "MSG_UIS_SPD3": "Rápido",
     "MSG_UIS_SPD4": "Muy rápido",
-    "MSG_STILLRTC": "Congelado"
+    "MSG_STILLRTC": "Congelado",
+    "MSG_STATE_TYPE_PT": "Los archivos de estado (savestates) se guardarán en el directorio %s",
+    "MSG_SETT_SAVETX": "Guardado flash",
+    "MSG_SAVE_TYPE_PTX": "El archivo de guardado (para juegos en la flash) se ubica en el directorio %s",
+    "MSG_SETT_VERNOR": "Verificar flash",
+    "MSG_VERNOR_I": "Comprueba los ROMs cuando se escriben en la flash"
 }

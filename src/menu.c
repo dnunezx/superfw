@@ -40,7 +40,9 @@
 #include "cheats.h"
 #include "ingame.h"
 #include "emu.h"
+#include "recent.h"
 #include "flash_mgr.h"
+#include "flash.h"
 #include "sha256.h"
 #include "supercard_driver.h"
 
@@ -89,15 +91,6 @@ enum {
 #endif
 };
 
-#ifdef COVER_ART_DEMO
-#define BROWSER_MAXFN_CNT             9
-#define RECENT_MAXFN_CNT              4
-#define FAVORITES_MAXFN_CNT           4
-#else
-#define BROWSER_MAXFN_CNT     (16*1024)
-#define RECENT_MAXFN_CNT          (200)
-#define FAVORITES_MAXFN_CNT       (200)
-#endif
 #ifdef UI_BROWSER_V2
 #define BROWSER_ROWS UI_BROWSER_V2_ROWS
 #else
@@ -204,26 +197,32 @@ enum {
 #endif
 
 enum {
-  SettTitle1   =  0,
-  SettHotkey   =  1,
-  SettBootType =  2,
-  SettFastSD   =  3,
-  SettFastEWRAM = 4,
-  SettSaveLoc  =  5,
-  SettSaveBkp  =  6,
-  SettStateLoc =  7,
-  SettCheatEn  =  8,
-  SettTitle2   =  9,
-  DefsPatchEng = 10,
-  DefsGamMenu  = 11,
-  DefsRTCEnb   = 12,
-  DefsRTCVal   = 13,
-  DefsRTCSpeed = 14,
-  DefsLoadPol  = 15,
-  DefsSavePol  = 16,
-  DefsPrefDS   = 17,
-  SettSave     = 18,
-  SettMAX      = 18,
+  SettTitle1 = 0,
+  SettHotkey,
+  SettBootType,
+  SettFastSD,
+  #ifdef SUPPORT_NORGAMES
+  SettVerifyNOR,
+  #endif
+  SettFastEWRAM,
+  SettSaveLoc,
+  #ifdef SUPPORT_NORGAMES
+  SettSaveLocNOR,
+  #endif
+  SettSaveBkp,
+  SettStateLoc,
+  SettCheatEn,
+  SettTitle2,
+  DefsPatchEng,
+  DefsGamMenu,
+  DefsRTCEnb,
+  DefsRTCVal,
+  DefsRTCSpeed,
+  DefsLoadPol,
+  DefsSavePol,
+  DefsPrefDS,
+  SettSave,
+  SettMAX
 };
 
 enum {
@@ -462,6 +461,7 @@ static struct {
     // Launch GBA game from NOR memory
     struct {
       t_load_gba_lcfg l;                  // ROM loading info and settings;
+      const t_flash_game_entry *e;        // NOR game entry on RAM
     } norld;
 
     // Save file menu (.sav files)
@@ -493,12 +493,6 @@ typedef struct {
   uint16_t sortname[MAX_FN_LEN];       // Pre-decoded and sort-friendly name.
 } t_centry;
 _Static_assert (sizeof(t_centry) % 4 == 0, "t_centry must be word-friendly");
-
-typedef struct {
-  uint32_t fname_offset;     // Basename offset in fpath (precalculated!)
-  char fpath[MAX_FN_LEN];
-} t_rentry;
-_Static_assert (sizeof(t_rentry) % 4 == 0, "t_rentry must be word-friendly");
 
 // Pointer to SDRAM, where we place some data:
 //  - Scratch area 2MiB (for FW updates)
@@ -694,6 +688,9 @@ bool generate_patches_progress(const char *fn, unsigned fs) {
   f_close(&fd);
   patchengine_finalize(&pb);
 
+  WRITE_LOG("Patch engine done. Found wcnt: %d save: %d (save mode: %d) irqh: %d rtc: %d",
+            pb.p.wcnt_ops, pb.p.save_ops, pb.p.save_mode, pb.p.irqh_ops, pb.p.rtc_ops);
+
   // Proceed to write patches to their cache.
   return write_patches_cache(fn, &pb.p);
 }
@@ -854,10 +851,18 @@ static bool prepare_gba_info(
   info->patches_datab_found = patchmem_lookup(gamecode, (uint8_t*)ROM_PATCHDB_U8, &info->patches_datab);
   set_supercard_mode(MAPPED_SDRAM, true, true);
 
+  if (!info->patches_datab_found)
+    WRITE_LOG("No patches in PatchDB found for '%s' with gamecode %c%c%c%c-%d",
+              fn, gamecode[0], gamecode[1], gamecode[2], gamecode[3], (int)gamecode[4]);
+
   // Attempt to load any existing patch and check also the PE cache dir.
   info->patches_cache_found = load_rom_patches(fn, &info->patches_cache);
-  if (!info->patches_cache_found)
+  if (!info->patches_cache_found) {
+    WRITE_LOG("No patch file found for '%s'", fn);
     info->patches_cache_found = load_cached_patches(fn, &info->patches_cache);
+    if (!info->patches_cache_found)
+      WRITE_LOG("No patch file found in patches cache dir for '%s'", fn);
+  }
 
   // If PatchAuto is selected, resolve it. Downgrade if not found.
   if (st->patch_policy == PatchAuto) {
@@ -900,10 +905,12 @@ static void prepare_gba_cheats(const char *gcode, uint8_t ver, t_load_gba_lcfg *
     replace_extension(data->cheatsfn, ".cht");
     data->cheats_found = check_file_exists(data->cheatsfn);
     if (!data->cheats_found) {
+      WRITE_LOG("No cheat file found at '%s'", data->cheatsfn);
       // Create a path using the game ID and version.
       npf_snprintf(data->cheatsfn, sizeof(data->cheatsfn), CHEATS_PATH "%c%c%c%c-%02x.cht",
                    gcode[0], gcode[1], gcode[2], gcode[3], ver);
       data->cheats_found = check_file_exists(data->cheatsfn);
+      WRITE_LOG("No cheat file found at '%s'", data->cheatsfn);
 
       // Load the cheats into memory if enabled.
       if (data->cheats_found) {
@@ -915,16 +922,21 @@ static void prepare_gba_cheats(const char *gcode, uint8_t ver, t_load_gba_lcfg *
           data->cheats_found = false;
         else
           data->cheats_size = cheatsz;
+
+        WRITE_LOG("Loaded cheats returned %d", cheatsz);
       }
     }
   }
   data->use_cheats = enable_cheats && data->cheats_found && prefer_cheats;
 }
 
-static void prepare_gba_settings(t_load_gba_lcfg *data, bool uses_dsaving, uint32_t rtcts, bool game_no_save, const char *fn) {
+static void prepare_gba_settings(t_load_gba_lcfg *data, bool uses_dsaving, uint32_t rtcts, bool game_no_save) {
   // Calculate the .sav file name, and check its existance.
-  sram_template_filename_calc(fn, ".sav", data->savefn);
   data->savefile_found = check_file_exists(data->savefn);
+  if (data->savefile_found)
+    WRITE_LOG("Savefile found at '%s'", data->savefn);
+  else
+    WRITE_LOG("No savefile found for '%s'", data->savefn);
 
   // Use default settings (and file existance) to fill in default choice.
   // DirectSaving enabled overrides the other settings.
@@ -996,7 +1008,8 @@ static void browser_open_gba(const char *fn, uint32_t fs, bool prompt_patchgen) 
       prepare_gba_cheats((char*)&rmh->gcode[0], rmh->version, &spop.p.load.l, fn, lh_sett.use_cheats);
 
       // Load and set default and sane settings honoring defaults and preferences.
-      prepare_gba_settings(&spop.p.load.l, spop.p.load.i.use_dsaving, lh_sett.rtcts, game_no_save, fn);
+      sram_filename_calc(fn, spop.p.load.l.savefn, save_path_default);
+      prepare_gba_settings(&spop.p.load.l, spop.p.load.i.use_dsaving, lh_sett.rtcts, game_no_save);
 
       // Show load ROM menu.
       spop.pop_num = POPUP_GBA_LOAD;
@@ -1006,6 +1019,38 @@ static void browser_open_gba(const char *fn, uint32_t fs, bool prompt_patchgen) 
     }
   }
 }
+
+#ifdef SUPPORT_NORGAMES
+static void browser_open_nor(const t_flash_game_entry * e) {
+  // Use attributes to determine patched save method.
+  const bool game_no_save = GET_GATTR_SAVEM(e->gattrs) <= SaveTypeNone;
+  const bool game_uses_dsaving = (e->gattrs & GATTR_SAVEDS);
+
+  t_rom_launch_settings lh_sett = {
+    .use_cheats = true,              // Defaults to true (just preferred, might be disabled/N/A)
+    .rtcts = rtcvalue_default
+  };
+  load_rom_settings(e->game_name, NULL, &lh_sett);
+
+  // Attempt to find a cheat file if cheats are enabled.
+  prepare_gba_cheats((char*)&e->gamecode, e->gamever, &spop.p.norld.l, e->game_name, lh_sett.use_cheats);
+
+  // Load and set default and sane settings honoring defaults and preferences.
+  sram_filename_calc(e->game_name, spop.p.norld.l.savefn, save_path_nor_default);
+  WRITE_LOG("loadp: %d savep: %d uses_ds: %d gamens: %d",
+            spop.p.norld.l.sram_load_type, spop.p.norld.l.sram_save_type,
+            game_uses_dsaving, game_no_save);
+  prepare_gba_settings(&spop.p.norld.l, game_uses_dsaving, lh_sett.rtcts, game_no_save);
+
+  // Save entry pointer
+  spop.p.norld.e = e;
+
+  // Show load ROM menu.
+  spop.pop_num = POPUP_GBA_NORLOAD;
+  spop.submenu = GbaLoadPopInfo;
+  spop.selector = 0;
+}
+#endif
 
 void patch_gen_callback(bool confirm) {
   // Generate patches if confirm was selected
@@ -1061,85 +1106,19 @@ unsigned guess_file_type(const uint8_t *header) {
   return FileTypeUnknown;
 }
 
-static void insert_recent_fn(const char *fn) {
-  for (unsigned i = 0; i < smenu.recent.maxentries; i++) {
-    if (!strcmp(sdr_state->rentries[i].fpath, fn)) {
-      // Found a matching file, move it to position 0, unless it's there already.
-      if (i) {
-        t_rentry tmp;
-        dma_memcpy16(&tmp, &sdr_state->rentries[i], sizeof(tmp) / 2);   // Copy entry to tmp
-        memmove32(&sdr_state->rentries[1], &sdr_state->rentries[0], i * sizeof(sdr_state->rentries[0]));
-        dma_memcpy16(&sdr_state->rentries[0], &tmp, sizeof(tmp) / 2);
-      }
-      return;
-    }
-  }
-
-  // Not in the list, push all items back and insert it in the first position
-  if (smenu.recent.maxentries) {
-    unsigned movecnt = MIN(smenu.recent.maxentries, RECENT_MAXFN_CNT - 1);
-    memmove32(&sdr_state->rentries[1], &sdr_state->rentries[0], movecnt * sizeof(sdr_state->rentries[0]));
-  }
-
-  const char *pbn = file_basename(fn);
-  sdr_state->rentries[0].fname_offset = pbn - fn;
-  dma_memcpy16(sdr_state->rentries[0].fpath, fn, (strlen(fn) + 1 + 1) / 2);
-  smenu.recent.maxentries++;
-}
-
-NOINLINE static bool recent_flush() {
-  // Flush to disk!
-  FIL fo;
-  if (FR_OK != f_open(&fo, RECENT_FILEPATH, FA_WRITE | FA_CREATE_ALWAYS))
-    return false;
-
-  // Write stuff to disk. Use a 1KiB buffer and flush as full blocks fill.
-  unsigned coff = 0;
-  char tmpbuf[1024];
-  tmpbuf[0] = 0;
-
-  for (unsigned i = 0; i < smenu.recent.maxentries; i++) {
-    unsigned fnlen = strlen(sdr_state->rentries[i].fpath);
-    memcpy(&tmpbuf[coff], sdr_state->rentries[i].fpath, fnlen);
-    coff += fnlen;
-    tmpbuf[coff++] = '\n';
-
-    if (coff >= 512) {
-      UINT wrbytes;
-      if (FR_OK != f_write(&fo, tmpbuf, 512, &wrbytes) || wrbytes != 512) {
-        f_close(&fo);
-        return false;
-      }
-      // Consume the first 512 written bytes
-      memmove(&tmpbuf[0], &tmpbuf[512], coff - 512);
-      coff -= 512;
-    }
-  }
-
-  // Flush the last bytes (if any!)
-  if (coff) {
-    UINT wrbytes;
-    if (FR_OK != f_write(&fo, tmpbuf, coff, &wrbytes) || wrbytes != coff) {
-      f_close(&fo);
-      return false;
-    }
-  }
-
-  return FR_OK == f_close(&fo);
-}
-
-static bool insert_recent_flush(const char *fn) {
+static bool insert_recent_flush(const char *fn, unsigned flags) {
   // Insert element.
-  insert_recent_fn(fn);
-  return recent_flush();
+  smenu.recent.maxentries = insert_recent_fn(sdr_state->rentries, smenu.recent.maxentries, fn, flags);
+  return recent_flush(sdr_state->rentries, smenu.recent.maxentries);
+}
+
+static bool recent_flush_current(void) {
+  return recent_flush(sdr_state->rentries, smenu.recent.maxentries);
 }
 
 static bool delete_recent_flush(unsigned entry_num) {
-  if (entry_num + 1 < smenu.recent.maxentries)
-    memmove32(&sdr_state->rentries[entry_num], &sdr_state->rentries[entry_num + 1],
-              (smenu.recent.maxentries - (entry_num + 1)) * sizeof(sdr_state->rentries[0]));
+  smenu.recent.maxentries = delete_recent(sdr_state->rentries, smenu.recent.maxentries, entry_num);
 
-  smenu.recent.maxentries--;
   if (smenu.recent.maxentries) {
     smenu.recent.selector = MIN(smenu.recent.maxentries - 1,
                                 smenu.recent.selector);
@@ -1152,57 +1131,14 @@ static bool delete_recent_flush(unsigned entry_num) {
     smenu.menu_tab = MENUTAB_ROMBROWSE;
   }
 
-  return recent_flush();
+  return recent_flush(sdr_state->rentries, smenu.recent.maxentries);
 }
 
 static void recent_reload() {
   smenu.recent.selector = 0;
-  smenu.recent.maxentries = 0;
   smenu.recent.seloff = 0;
   smenu.anim_state = 0;
-
-  FIL fi;
-  if (FR_OK != f_open(&fi, RECENT_FILEPATH, FA_READ))
-    return;
-
-  // Read data block by block.
-  char tmp[1024 + 4];
-  unsigned bcount = 0;
-  while (1) {
-    if (bcount <= 512) {
-      UINT rdbytes;
-      if (FR_OK != f_read(&fi, &tmp[bcount], 512, &rdbytes))
-        return;
-      bcount += rdbytes;
-      tmp[bcount] = 0;
-    }
-
-    if (!bcount)
-      break;
-
-    // Attempt to parse the next path.
-    char *p = strchr(tmp, '\n');
-    if (!p)
-      p = strchr(tmp, '\0');
-    if (!p)
-      break;       // Some path is way too long!
-
-    *p = 0;        // Add the string end char.
-
-    unsigned cnt = strlen(tmp) + 1;
-    if (cnt > 1) {
-      const char *pbn = file_basename(tmp);
-      sdr_state->rentries[smenu.recent.maxentries].fname_offset = pbn - tmp;
-      dma_memcpy16(sdr_state->rentries[smenu.recent.maxentries].fpath, tmp, (cnt + 1) / 2);
-      smenu.recent.maxentries++;
-    }
-
-    // Consume the bytes
-    memmove(&tmp[0], &tmp[cnt], bcount - cnt);
-    bcount -= cnt;
-  }
-
-  f_close(&fi);
+  smenu.recent.maxentries = recent_load(RECENT_FILEPATH, sdr_state->rentries);
 }
 
 #ifdef UI_BROWSER_V2
@@ -1404,14 +1340,14 @@ static void recent_reset_callback(bool confirm) {
   bool saved = menu_list_reset_flush(&smenu.recent.selector,
                                      &smenu.recent.seloff,
                                      &smenu.recent.maxentries,
-                                     recent_flush);
+                                     recent_flush_current);
   spop.alert_msg = msgs[lang_id][saved ? MSG_OK_GENERIC : MSG_ERR_GENERIC];
 }
 #endif
 
 void start_emu_game(const t_emu_loader *ldinfo, const char *fn, uint32_t fs) {
   // Load: Sav/Reset Save: Reboot/Disable
-  sram_template_filename_calc(fn, ".sav", spop.p.load.l.savefn);
+  sram_filename_calc(fn, spop.p.load.l.savefn, save_path_default);
   t_sram_load_policy lp = check_file_exists(spop.p.load.l.savefn) ? SaveLoadSav : SaveLoadReset;
   unsigned errsave = prepare_sram_based_savegame(lp, SaveReboot, spop.p.load.l.savefn);
   if (errsave) {
@@ -1424,9 +1360,9 @@ void start_emu_game(const t_emu_loader *ldinfo, const char *fn, uint32_t fs) {
     unsigned errcode = ERR_LOAD_NOEMU;
     while (ldinfo->emu_name) {
       if (recent_menu)
-        insert_recent_flush(fn);
+        insert_recent_flush(fn, FLAG_RECENT_SD);
 
-      unsigned errcode = load_extemu_rom(fn, fs, ldinfo, loadrom_progress);
+      errcode = load_extemu_rom(fn, fs, ldinfo, loadrom_progress);
       if (errcode && errcode != ERR_LOAD_NOEMU)
         break;
       ldinfo++;
@@ -1855,7 +1791,7 @@ void render_flashbrowser(volatile uint8_t *frame) {
       if (smenu.fbrowser.seloff + i >= smenu.fbrowser.maxentries)
         break;
 
-      t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.seloff + i];
+      const t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.seloff + i];
       render_icon(2, (i+1)*16, ICON_GBACART);
 
       // Animate the row entries if they are too long!
@@ -2208,10 +2144,13 @@ void render_gba_norload(volatile uint8_t *frame) {
   draw_text_ovf("⯇", frame, 10, 23, 64);
   draw_rightj_text("⯈", frame, SCREEN_WIDTH - 10, 23);
 
-  t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.selector];
+  const t_flash_game_entry *e = spop.p.norld.e;
   if (spop.submenu == GbaLoadPopInfo) {
     int save_type = GET_GATTR_SAVEM(e->gattrs);
-    render_gbarom_info(frame, e->game_name, false, (const char*)&e->gamecode, e->gamever, save_type);
+    char gcode[5] = {
+      e->gamecode & 0xFF, (e->gamecode >> 8) & 0xFF, (e->gamecode >> 16) & 0xFF, e->gamecode >> 24, 0
+    };
+    render_gbarom_info(frame, e->game_name, false, gcode, e->gamever, save_type);
     draw_central_text(msgs[lang_id][MSG_NOR_LAUNCH], frame, 120, 134);
   } else {
     bool rtc_patching = e->gattrs & GATTR_RTC;
@@ -2282,9 +2221,9 @@ void render_rtcpop(volatile uint8_t *frame) {
 
 #ifndef UI_BROWSER_V2
 void render_settings(volatile uint8_t *frame) {
-  char tmp[80];
+  char tmp[128];
   unsigned baseopt = smenu.set.selector <= 2  ? 0 :
-                     smenu.set.selector >= SettMAX - 2 ? SettMAX - 4 :
+                     smenu.set.selector >= SettMAX - 3 ? SettMAX - 5 :
                      smenu.set.selector - 2;
 
   if (smenu.set.selector > 2)
@@ -2292,37 +2231,44 @@ void render_settings(volatile uint8_t *frame) {
   if (smenu.set.selector < SettSave - 2)
     draw_central_text("⯆", frame, 120, 125);
 
-  unsigned msk = 0x1F << baseopt;
-  unsigned optcnt = 0;
+  const unsigned maxrows = 5;
+  unsigned optnum = 0, optcnt = 0;
   const unsigned colx = 170;           // Center point for the selection boxes
   const unsigned offy = 29;
   const unsigned rowh = 20;
 
-  if (msk & 0x00001)
+  if (optnum++ >= baseopt && optcnt < maxrows)
     draw_central_text(msgs[lang_id][MSG_SET_TITL1], frame, SCREEN_WIDTH/2, offy + rowh*optcnt++);
 
-  if (msk & 0x00002) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     npf_snprintf(tmp, sizeof(tmp), "< %s >", hotkey_list[hotkey_combo].cname);
     draw_text_ovf(msgs[lang_id][MSG_SETT_HOTK], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(tmp, frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00004) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_SETT_BOOT], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][MSG_BOOT_TYPE0 + boot_bios_splash], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00008) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_SETT_FASTSD], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][use_slowld ? MSG_KNOB_DISABLED : MSG_KNOB_ENABLED], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00010) {
+  #ifdef SUPPORT_NORGAMES
+  if (optnum++ >= baseopt && optcnt < maxrows) {
+    draw_text_ovf(msgs[lang_id][MSG_SETT_VERNOR], frame, 8, offy + rowh*optcnt, 224);
+    draw_central_text(msgs[lang_id][use_verify_nor ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED], frame, colx, offy + rowh*optcnt++);
+  }
+  #endif
+
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_SETT_FASTEW], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][use_fastew ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00020) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_SETT_SAVET], frame, 8, offy + rowh*optcnt, 224);
 
     if (save_path_default == SaveRomName)
@@ -2333,46 +2279,50 @@ void render_settings(volatile uint8_t *frame) {
     }
   }
 
-  if (msk & 0x00040) {
-    npf_snprintf(tmp, sizeof(tmp), "< %lu >", backup_sram_default);
+  #ifdef SUPPORT_NORGAMES
+  if (optnum++ >= baseopt && optcnt < maxrows) {
+    draw_text_ovf(msgs[lang_id][MSG_SETT_SAVETX], frame, 8, offy + rowh*optcnt, 224);
+    npf_snprintf(tmp, sizeof(tmp), "< %s >", save_paths[save_path_nor_default]);
+    draw_central_text(tmp, frame, colx, offy + rowh*optcnt++);
+  }
+  #endif
+
+  if (optnum++ >= baseopt && optcnt < maxrows) {
+    npf_snprintf(tmp, sizeof(tmp), "< %u >", backup_sram_default);
     draw_text_ovf(msgs[lang_id][MSG_SETT_SAVEBK], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(tmp, frame, colx, offy + rowh*optcnt++ );
   }
 
-  if (msk & 0x00080) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_SETT_STATET], frame, 8, offy + rowh*optcnt, 224);
-    if (state_path_default == StateRomName)
-      draw_central_text(msgs[lang_id][MSG_NEXTTO_ROM], frame, colx, offy + rowh*optcnt++);
-    else {
-      npf_snprintf(tmp, sizeof(tmp), "< %s >", savestates_paths[state_path_default]);
-      draw_central_text(tmp, frame, colx, offy + rowh*optcnt++);
-    }
+    npf_snprintf(tmp, sizeof(tmp), "< %s >", savestates_paths_display[state_path_default]);
+    draw_central_text(tmp, frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00100) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_SETT_CHTEN], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][enable_cheats ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00200)
+  if (optnum++ >= baseopt && optcnt < maxrows)
     draw_central_text(msgs[lang_id][MSG_SET_TITL2], frame, SCREEN_WIDTH/2, offy + rowh*optcnt++);
 
-  if (msk & 0x00400) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_DEFS_PATCH], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][MSG_PATCH_TYPE0 + patcher_default], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x00800) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_LOADER_MENU], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][MSG_KNOB_DISABLED + ingamemenu_default], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x01000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_LOADER_RTCE], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][MSG_KNOB_DISABLED + rtcpatch_default], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x02000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     t_dec_date d;
     timestamp2date(rtcvalue_default, &d);
     npf_snprintf(tmp, sizeof(tmp), "20%02d/%02d/%02d %02d:%02d",
@@ -2381,7 +2331,7 @@ void render_settings(volatile uint8_t *frame) {
     draw_central_text(tmp, frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x04000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     unsigned spdmsg = rtcspeed_default ? (MSG_UIS_SPD0 + rtcspeed_default - 1) :
                                           MSG_STILLRTC;
     npf_snprintf(tmp, sizeof(tmp), "< %s >", msgs[lang_id][spdmsg]);
@@ -2389,22 +2339,22 @@ void render_settings(volatile uint8_t *frame) {
     draw_central_text(tmp, frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x08000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_LOADER_LOADP], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][MSG_DEF_LOADP0 + (autoload_default ^ 1)], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x10000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_LOADER_SAVEP], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][autosave_default ? MSG_DEF_SAVEP0 : MSG_DEF_SAVEP1], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x20000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_text_ovf(msgs[lang_id][MSG_LOADER_PREFDS], frame, 8, offy + rowh*optcnt, 224);
     draw_central_text(msgs[lang_id][autosave_prefer_ds ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED], frame, colx, offy + rowh*optcnt++);
   }
 
-  if (msk & 0x40000) {
+  if (optnum++ >= baseopt && optcnt < maxrows) {
     draw_button_box(frame, 20, 220, 112, 132, smenu.set.selector == SettSave);
     draw_central_text(msgs[lang_id][MSG_UIS_SAVE], frame, 132, 114);
   }
@@ -2419,7 +2369,18 @@ void render_settings(volatile uint8_t *frame) {
       npf_snprintf(tmp, sizeof(tmp), msgs[lang_id][MSG_SAVE_TYPE_PT], save_paths[save_path_default]);
       draw_text_ovf_rotate(tmp, frame, 4, SCREEN_HEIGHT - 18, 232, &smenu.anim_state);
     }
-  } else {
+  }
+  else if (smenu.set.selector == SettStateLoc) {
+    npf_snprintf(tmp, sizeof(tmp), msgs[lang_id][MSG_STATE_TYPE_PT], savestates_paths[state_path_default]);
+    draw_text_ovf_rotate(tmp, frame, 4, SCREEN_HEIGHT - 18, 232, &smenu.anim_state);
+  }
+  #ifdef SUPPORT_NORGAMES
+  else if (smenu.set.selector == SettSaveLocNOR) {
+    npf_snprintf(tmp, sizeof(tmp), msgs[lang_id][MSG_SAVE_TYPE_PTX], save_paths[save_path_nor_default]);
+    draw_text_ovf_rotate(tmp, frame, 4, SCREEN_HEIGHT - 18, 232, &smenu.anim_state);
+  }
+  #endif
+  else {
     unsigned help_msg = smenu.set.selector == SettBootType ? MSG_BOOT_TYPE_I0 + boot_bios_splash :
                         smenu.set.selector == SettSaveBkp  ? MSG_BACKUP_I :
                         smenu.set.selector == SettFastSD   ? MSG_FASTSD_I :
@@ -2428,6 +2389,9 @@ void render_settings(volatile uint8_t *frame) {
                         smenu.set.selector == DefsLoadPol  ? MSG_DEF_LOADP_I0 + (autoload_default ^ 1) :
                         smenu.set.selector == DefsSavePol  ? MSG_DEF_SAVEP_I0 + (autosave_default ^ 1) :
                         smenu.set.selector == DefsPrefDS   ? MSG_LOADER_PREFDSI :
+                        #ifdef SUPPORT_NORGAMES
+                        smenu.set.selector == SettVerifyNOR ? MSG_VERNOR_I :
+                        #endif
                         MSG_EMPTY;
     draw_text_ovf_rotate(msgs[lang_id][help_msg], frame, 4, SCREEN_HEIGHT - 18, 232, &smenu.anim_state);
   }
@@ -2440,8 +2404,8 @@ void render_settings(volatile uint8_t *frame) {
 void render_ui_settings(volatile uint8_t *frame) {
   const unsigned colx = 170;
   char tmpbuf[64];
-  npf_snprintf(tmpbuf, sizeof(tmpbuf), "< %s >", msgs[lang_id][MSG_LANG_NAME]);
-  draw_text_ovf(msgs[lang_id][MSG_UIS_LANG], frame, 8, 22, 224);
+  npf_snprintf(tmpbuf, sizeof(tmpbuf), "< %u >", menu_theme + 1U);
+  draw_text_ovf(msgs[lang_id][MSG_UIS_THEME], frame, 8, 22, 224);
   draw_central_text(tmpbuf, frame, colx, 22 );
 
   draw_text_ovf(msgs[lang_id][MSG_UIS_RECNT], frame, 8, 22 + 20, 224);
@@ -2602,17 +2566,24 @@ static const char *ui_setting_value(unsigned option, char *tmp, unsigned tmpsz) 
     return msgs[lang_id][MSG_BOOT_TYPE0 + boot_bios_splash];
   case SettFastSD:
     return msgs[lang_id][use_slowld ? MSG_KNOB_DISABLED : MSG_KNOB_ENABLED];
+#ifdef SUPPORT_NORGAMES
+  case SettVerifyNOR:
+    return msgs[lang_id][use_verify_nor ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED];
+#endif
   case SettFastEWRAM:
     return msgs[lang_id][use_fastew ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED];
   case SettSaveLoc:
     return save_path_default == SaveRomName ? msgs[lang_id][MSG_NEXTTO_ROM] :
                                              save_paths[save_path_default];
+#ifdef SUPPORT_NORGAMES
+  case SettSaveLocNOR:
+    return save_paths[save_path_nor_default];
+#endif
   case SettSaveBkp:
-    npf_snprintf(tmp, tmpsz, "%lu", backup_sram_default);
+    npf_snprintf(tmp, tmpsz, "%u", backup_sram_default);
     return tmp;
   case SettStateLoc:
-    return state_path_default == StateRomName ? msgs[lang_id][MSG_NEXTTO_ROM] :
-                                                savestates_paths[state_path_default];
+    return savestates_paths[state_path_default];
   case SettCheatEn:
     return msgs[lang_id][enable_cheats ? MSG_KNOB_ENABLED : MSG_KNOB_DISABLED];
   case DefsPatchEng:
@@ -2946,19 +2917,28 @@ static void render_ui_browser_phase4(volatile uint8_t *frame) {
       model.entries[i].kind = UiBrowserV2Other;
     }
   } else if (smenu.menu_tab == MENUTAB_SETTINGS) {
-    static const unsigned labels[SettMAX + 1] = {
+    static const unsigned labels[] = {
       MSG_SET_TITL1, MSG_SETT_HOTK, MSG_SETT_BOOT, MSG_SETT_FASTSD,
-      MSG_SETT_FASTEW, MSG_SETT_SAVET, MSG_SETT_SAVEBK, MSG_SETT_STATET,
+#ifdef SUPPORT_NORGAMES
+      MSG_SETT_VERNOR,
+#endif
+      MSG_SETT_FASTEW, MSG_SETT_SAVET,
+#ifdef SUPPORT_NORGAMES
+      MSG_SETT_SAVETX,
+#endif
+      MSG_SETT_SAVEBK, MSG_SETT_STATET,
       MSG_SETT_CHTEN, MSG_SET_TITL2, MSG_DEFS_PATCH, MSG_LOADER_MENU,
       MSG_LOADER_RTCE, MSG_DEF_RTCVAL, MSG_DEF_SPEED, MSG_LOADER_LOADP,
       MSG_LOADER_SAVEP, MSG_LOADER_PREFDS, MSG_UIS_SAVE,
     };
+    _Static_assert(ARRAY_SIZE(labels) == SettMAX,
+                   "settings labels must match settings enum");
     char values[UI_BROWSER_V2_ROWS][32];
     unsigned base = smenu.set.selector <= 3 ? 0 :
-                    smenu.set.selector >= SettMAX - 3 ? SettMAX - 6 :
-                                                       smenu.set.selector - 3;
+                    MIN((unsigned)smenu.set.selector - 3,
+                        SettMAX - UI_BROWSER_V2_ROWS);
     model.wide = true;
-    model.entry_count = MIN(SettMAX + 1 - base, UI_BROWSER_V2_ROWS);
+    model.entry_count = MIN(SettMAX - base, UI_BROWSER_V2_ROWS);
     model.selected_row = smenu.set.selector - base;
     for (unsigned i = 0; i < model.entry_count; i++) {
       unsigned option = base + i;
@@ -3698,7 +3678,7 @@ static void keypress_popup_loadgba(unsigned newkeys) {
 #endif
       // Insert the ROM into the recent list (or move it around). Flush to disk!
       if (recent_menu)
-        insert_recent_flush(spop.p.load.i.romfn);
+        insert_recent_flush(spop.p.load.i.romfn, FLAG_RECENT_SD);
 
       // Honor load.patch_type.
       const t_patch *p = get_game_patch(&spop.p.load.i);
@@ -3724,7 +3704,8 @@ static void keypress_popup_loadgba(unsigned newkeys) {
       };
 
       unsigned err = load_gba_rom(
-        spop.p.load.i.romfn, spop.p.load.i.romfs, p,
+        spop.p.load.i.romfn, spop.p.load.i.romfs,
+        spop.p.load.l.sram_save_type == SaveDisable ? NULL : spop.p.load.l.savefn, p,
         spop.p.load.l.sram_save_type == SaveDirect ? &dsinfo : NULL,
         spop.p.load.i.ingame_menu_enabled,
         spop.p.load.i.rtc_patch_enabled ? &rtci : NULL,
@@ -3888,7 +3869,7 @@ static void keypress_popup_norload(unsigned newkeys) {
   if (newkeys & KEY_BUTTDOWN)
     spop.selector = MIN(GBALdSetCNT - 1, spop.selector + 1);
 
-  const t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.selector];
+  const t_flash_game_entry *e = spop.p.norld.e;
   bool uses_dsave = e->gattrs & GATTR_SAVEDS;
   bool uses_igm   = e->gattrs & GATTR_IGM;
   bool uses_rtc   = e->gattrs & GATTR_RTC;
@@ -3956,7 +3937,6 @@ static void keypress_popup_norload(unsigned newkeys) {
 
   if (newkeys & KEY_BUTTA) {
     if (spop.submenu == GbaLoadPopInfo) {
-      const t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.selector];
       const int stype = GET_GATTR_SAVEM(e->gattrs);
       const EnumSavetype st = stype < 0 ? SaveTypeNone : stype;
       bool uses_dsave = e->gattrs & GATTR_SAVEDS;
@@ -3980,14 +3960,19 @@ static void keypress_popup_norload(unsigned newkeys) {
         .ts_step = rtcspeed_default
       };
 
-      // TODO Handle errors, finish missing stuff.
+      if (recent_menu)
+        insert_recent_flush(e->game_name, FLAG_RECENT_NOR);
+
       unsigned err = launch_gba_nor(
         e->game_name,
+        spop.p.norld.l.sram_save_type == SaveDisable ? NULL : spop.p.norld.l.savefn,
         e->blkmap, e->numblks,
         uses_dsave ? &dsinfo : NULL,
         uses_rtc ? &rtci : NULL,
         uses_igm,
         spop.p.norld.l.use_cheats ? spop.p.norld.l.cheats_size : 0);
+      if (err)
+        spop.alert_msg = msgs[lang_id][MSG_ERR_GENERIC];
     }
     else if (spop.selector == GBALdRemember) {
       // Save settings to disk now!
@@ -4001,8 +3986,6 @@ static void keypress_popup_norload(unsigned newkeys) {
         .use_cheats = spop.p.norld.l.use_cheats,
         .rtcts = spop.p.norld.l.rtcval
       };
-
-      const t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.selector];
 
       // We load the loading settings to ensure we do not overwrite them.
       load_rom_settings(e->game_name, &ld_sett, NULL);
@@ -4212,23 +4195,37 @@ static void keypress_menu_recent(unsigned newkeys) {
 #ifndef COVER_ART_DEMO
     if (newkeys & KEY_BUTTA) {
       t_rentry *e = &sdr_state->rentries[smenu.recent.selector];
-      char path[MAX_FN_LEN];
-      dma_memcpy16(path, e->fpath, MAX_FN_LEN / 2);
-      path[MAX_FN_LEN - 1] = 0;
-      // stat() the file since we need the size, and validate that it exists!
-      FILINFO info;
-      FRESULT res = f_stat(path, &info);
-      if (res == FR_OK) {
-        browser_open(path, info.fsize);
-      } else {
-        spop.alert_msg = msgs[lang_id][MSG_ERR_READ];
+      #ifdef SUPPORT_NORGAMES
+      if (e->flags & FLAG_RECENT_NOR) {
+        // Try to find the ROM in the current flash metadata.
+        for (unsigned i = 0; i < sdr_state->nordata.gamecnt; i++) {
+          const t_flash_game_entry *fe = &sdr_state->nordata.games[i];
+          if (!strcmp(e->fpath, fe->game_name)) {
+            browser_open_nor(fe);
+            return;
+          }
+        }
+        spop.alert_msg = msgs[lang_id][MSG_ERR_GENERIC];
+      }
+      else
+      #endif
+      {
+        char path[MAX_FN_LEN];
+        dma_memcpy16(path, e->fpath, MAX_FN_LEN / 2);
+        path[MAX_FN_LEN - 1] = 0;
+        // stat() the file since we need the size, and validate that it exists!
+        FILINFO info;
+        FRESULT res = f_stat(path, &info);
+        if (res == FR_OK)
+          browser_open(path, info.fsize);
+        else
+          spop.alert_msg = msgs[lang_id][MSG_ERR_READ];
       }
     }
     else if (newkeys & KEY_BUTTSEL) {
       void recent_del_cb(bool confirm) {
-        if (confirm) {
+        if (confirm)
           delete_recent_flush(smenu.recent.selector);
-        }
       }
       spop.qpop.message = msgs[lang_id][MSG_Q4_DELREC];
       spop.qpop.default_button = msgs[lang_id][MSG_Q_NO];
@@ -4427,30 +4424,8 @@ static void keypress_menu_norbrowse(unsigned newkeys) {
       smenu.fbrowser.seloff   = MIN(smenu.fbrowser.maxentries - 1, smenu.fbrowser.seloff   + NORGAMES_ROWS);
     }
 
-    if (newkeys & KEY_BUTTA) {
-      t_flash_game_entry *e = &sdr_state->nordata.games[smenu.fbrowser.selector];
-
-      // Use attributes to determine patched save method.
-      const bool game_no_save = GET_GATTR_SAVEM(e->gattrs) <= SaveTypeNone;
-      const bool game_uses_dsaving = (e->gattrs & GATTR_SAVEDS);
-
-      t_rom_launch_settings lh_sett = {
-        .use_cheats = true,              // Defaults to true (just preferred, might be disabled/N/A)
-        .rtcts = rtcvalue_default
-      };
-      load_rom_settings(e->game_name, NULL, &lh_sett);
-
-      // Attempt to find a cheat file if cheats are enabled.
-      prepare_gba_cheats((char*)&e->gamecode, e->gamever, &spop.p.norld.l, e->game_name, lh_sett.use_cheats);
-
-      // Load and set default and sane settings honoring defaults and preferences.
-      prepare_gba_settings(&spop.p.norld.l, game_uses_dsaving, lh_sett.rtcts, game_no_save, e->game_name);
-
-      // Show load ROM menu.
-      spop.pop_num = POPUP_GBA_NORLOAD;
-      spop.submenu = GbaLoadPopInfo;
-      spop.selector = 0;
-    }
+    if (newkeys & KEY_BUTTA)
+      browser_open_nor(&sdr_state->nordata.games[smenu.fbrowser.selector]);
     else if (newkeys & KEY_BUTTSEL) {
       // Prompt NOR entry deletion.
       void remove_nor_action(bool confirm) {
@@ -4494,7 +4469,7 @@ static void keypress_menu_settings(unsigned newkeys) {
       smenu.set.selector--;
   }
   if (newkeys & KEY_BUTTDOWN) {
-    smenu.set.selector = MIN(SettMAX, smenu.set.selector + 1);
+    smenu.set.selector = MIN(SettMAX - 1, smenu.set.selector + 1);
     if (smenu.set.selector == SettTitle2)
       smenu.set.selector++;
   }
@@ -4502,13 +4477,17 @@ static void keypress_menu_settings(unsigned newkeys) {
   if (newkeys & KEY_BUTTUP)
     smenu.set.selector = MAX(0, smenu.set.selector - 1);
   if (newkeys & KEY_BUTTDOWN)
-    smenu.set.selector = MIN(SettMAX, smenu.set.selector + 1);
+    smenu.set.selector = MIN(SettMAX - 1, smenu.set.selector + 1);
 #endif
   if (newkeys & KEY_BUTTLEFT) {
     if (smenu.set.selector == SettHotkey)
       hotkey_combo = (hotkey_combo + hotkey_listcnt - 1) % hotkey_listcnt;
     else if (smenu.set.selector == SettSaveLoc)
       save_path_default = (save_path_default + SaveDirCNT - 1) % SaveDirCNT;
+    #ifdef SUPPORT_NORGAMES
+    else if (smenu.set.selector == SettSaveLocNOR)
+      save_path_nor_default = (save_path_nor_default + SaveDirNORCNT - 1) % SaveDirNORCNT;
+    #endif
     else if (smenu.set.selector == SettStateLoc)
       state_path_default = (state_path_default + StateDirCNT - 1) % StateDirCNT;
     else if (smenu.set.selector == SettSaveBkp)
@@ -4516,21 +4495,25 @@ static void keypress_menu_settings(unsigned newkeys) {
     else if (smenu.set.selector == DefsPatchEng)
       patcher_default = (patcher_default + PatchTotalCNT - 1) % PatchTotalCNT;
     else if (smenu.set.selector == DefsRTCSpeed)
-      rtcspeed_default = (rtcspeed_default + rtc_speed_cnt() - 1) % rtc_speed_cnt();
+      rtcspeed_default = (rtcspeed_default + RTC_SPEED_CNT - 1) % RTC_SPEED_CNT;
   }
   if (newkeys & KEY_BUTTRIGHT) {
     if (smenu.set.selector == SettHotkey)
       hotkey_combo = (hotkey_combo + 1) % hotkey_listcnt;
     else if (smenu.set.selector == SettSaveLoc)
       save_path_default = (save_path_default + 1) % SaveDirCNT;
+    #ifdef SUPPORT_NORGAMES
+    else if (smenu.set.selector == SettSaveLocNOR)
+      save_path_nor_default = (save_path_nor_default + 1) % SaveDirNORCNT;
+    #endif
     else if (smenu.set.selector == SettStateLoc)
       state_path_default = (state_path_default + 1) % StateDirCNT;
     else if (smenu.set.selector == SettSaveBkp)
-      backup_sram_default = MIN(16, backup_sram_default + 1);
+      backup_sram_default = MIN(MAX_BACKUP_CNT, backup_sram_default + 1);
     else if (smenu.set.selector == DefsPatchEng)
       patcher_default = (patcher_default + 1) % PatchTotalCNT;
     else if (smenu.set.selector == DefsRTCSpeed)
-      rtcspeed_default = (rtcspeed_default + 1) % rtc_speed_cnt();
+      rtcspeed_default = (rtcspeed_default + 1) % RTC_SPEED_CNT;
   }
   if (newkeys & (KEY_BUTTLEFT | KEY_BUTTRIGHT)) {
     if (smenu.set.selector == SettBootType)
@@ -4551,6 +4534,10 @@ static void keypress_menu_settings(unsigned newkeys) {
       use_slowld ^= 1;
     else if (smenu.set.selector == SettFastEWRAM)
       use_fastew = fastew ? (use_fastew ^ 1) : 0;
+    #ifdef SUPPORT_NORGAMES
+    else if (smenu.set.selector == SettVerifyNOR)
+      use_verify_nor ^= 1;
+    #endif
   }
 
   if (newkeys & KEY_BUTTA && smenu.set.selector == DefsRTCVal) {

@@ -21,6 +21,7 @@
 
 #include "common.h"
 #include "flash_mgr.h"
+#include "flash.h"
 #include "util.h"
 
 // Flash management routines
