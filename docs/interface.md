@@ -1,8 +1,8 @@
 # SuperR7 interface
 
-SuperR7 uses a native 240-by-160 card interface designed for the SuperCard SD.
-The current layout presents a 76-by-76 cover beside a seven-row game list and a
-four-item dock: Favorites, Recent, Browse, and Tools.
+SuperR7 uses a native 240-by-160 card interface for SuperCard SD and SuperChis
+hardware. The current layout presents a 76-by-76 cover beside a seven-row game
+list and a four-item dock: Favorites, Recent, Browse, and Tools.
 
 ## Library navigation
 
@@ -35,8 +35,8 @@ Favorites tab, Select requests confirmation before removing the selected item.
 The Tools screen includes `Reset Favorites` and `Reset Recent`. Each action
 asks for confirmation, clears only its saved list, and never deletes ROMs.
 
-System Information displays the build fingerprint `Luna 1.1 SD` on its Build
-row for the Luna 1.1 SuperCard SD release line.
+System Information displays the board-specific build fingerprint `Luna 1.2 RC1
+SD` or `Luna 1.2 RC1 Chis` on its Build row.
 
 During startup, SuperR7 keeps the completed boot logo visible while it prepares
 Browse on the hidden framebuffer. The UI palette and completed first page are

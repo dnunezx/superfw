@@ -16,6 +16,9 @@ latest upstream SuperFW firmware release**. Underneath the extreme attitude is
 the proven SuperFW engine. Up front is a whole new cover-powered game library
 built for the GBA's 240-by-160 screen.
 
+The published Luna 1.2 RC1 builds have passed physical testing on both
+SuperCard SD and SuperChis hardware and are ready for their matching carts.
+
 ## 41,160 ways to make it yours
 
 Build your look from three independently selectable color roles:

@@ -1,8 +1,8 @@
 # SuperR7 hardware validation
 
-This record identifies the exact firmware images that passed physical
-SuperCard SD testing. SHA-256 is the authority when similarly named local
-files exist.
+This record identifies the exact firmware images that passed physical testing
+on matching SuperCard SD or SuperChis hardware. SHA-256 is the authority when
+similarly named local files exist.
 
 Generated images and test captures live in the ignored local `artifacts/`
 workspace. Public downloads belong on versioned GitHub Releases, not in the
@@ -13,7 +13,7 @@ source tree.
 | Date | State | Local image | Size | SHA-256 |
 | --- | --- | --- | ---: | --- |
 | 2026-09-13 | Current: Luna 1.2 RC1 Chis; hardware-tested on SuperChis | `SuperR7-Chis-Luna1.2-RC1.gba` | 1,671,680 | `791D6FB76F05BC0CD7EF3B67EFCAABB6AB5B8AB9A164240CE0D7EE071B70D3D0` |
-| 2026-09-13 | Candidate: Luna 1.2 RC1 SD; automated verification passed, exact chain-load pending | `SuperR7-SD-Luna1.2-RC1.gba` | 515,584 | `65171A5689FC805B07768AB16EA9B9BB09DA6D8C101D537EE1C5BF379AFD8416` |
+| 2026-09-13 | Current: Luna 1.2 RC1 SD; hardware-tested on SuperCard SD | `SuperR7-SD-Luna1.2-RC1.gba` | 515,584 | `65171A5689FC805B07768AB16EA9B9BB09DA6D8C101D537EE1C5BF379AFD8416` |
 | 2026-08-22 | Candidate: Luna 1.1 SD fingerprint; exact chain-load pending | `SuperR7-SD-Luna1.1-hardware-test.gba` | Pending final tagged build | Pending final tagged build |
 | 2026-08-22 | Current: Browse controls, list resets, and clean logo-to-UI handoff | `superr7-logo-to-ui-no-white-flash-hardware-test.gba` | 521,728 | `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204` |
 | 2026-08-22 | Rollback: connected dynamic Browse page pill | `superr7-connected-page-pill-test.gba` | 520,704 | `136C0726E4758460BBE1E7988F4647F8429946F839B0E556A472FC0230482C36` |
@@ -30,28 +30,25 @@ source tree.
 The latest confirmed SuperChis image is Luna 1.2 RC1. The exact image above
 passed hardware testing, including the SuperChis-specific release gate, and
 its matching `.gba` and `.fw` files are byte-identical. Its recorded size and
-SHA-256 identify the approved release candidate.
+SHA-256 identify the approved release image.
 
-The Luna 1.2 RC1 SuperCard SD candidate is built from the same SuperFW v0.21-
-based source. Its automated build and firmware checks pass, and it remains
-8,704 bytes below the 512 KiB limit. It must still be chain-loaded on physical
-SuperCard SD hardware before being promoted from candidate status.
+The Luna 1.2 RC1 SuperCard SD image is built from the same SuperFW v0.21-based
+source. Its automated build and firmware checks pass, it remains 8,704 bytes
+below the 512 KiB limit, and the exact published image passed physical
+SuperCard SD testing. It is approved for release on matching hardware.
 
-The latest confirmed SuperCard SD image preserves fixed seven-item pages,
+It preserves fixed seven-item pages,
 accelerated held Browse paging, and the connected dynamic page pill. It adds
 Browse-only sorting and GBA/GB/GBC filtering, confirmed Reset Favorites and
 Reset Recent tools, and a VBlank handoff that keeps the boot logo visible until
 the first complete UI framebuffer is ready. The user confirmed that this exact
-image works great on physical SuperCard SD hardware. Its GBA header checksum,
-embedded size, and firmware digest are valid, and it remains 2,560 bytes below
-the 512 KiB limit.
+image works great on physical SuperCard SD hardware.
 
-The Luna 1.1 SD source adds the visible `Luna 1.1 SD` System Information build
-fingerprint and persists all four Browse View & Sort choices across reboot.
-Its popup advertises and accepts A as the value-change control; L and R remain
-reserved for navigation outside it. These changes produce a new binary, so the
-final tagged image must complete one exact-hash chain-load before it replaces
-the current image in the accepted lineage or is attached to a public release.
+The superseded Luna 1.1 SD source added the visible `Luna 1.1 SD` System
+Information build fingerprint and persists all four Browse View & Sort choices
+across reboot. Its popup advertises and accepts A as the value-change control;
+L and R remain reserved for navigation outside it. That fingerprinted
+candidate was superseded by the hardware-validated Luna 1.2 RC1 SD release.
 
 The three oldest historical packages remain tracked under
 [`releases/archive`](../releases/README.md). New public binaries should be
