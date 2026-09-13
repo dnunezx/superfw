@@ -11,9 +11,10 @@
 
 SuperR7 is an independent, GPL-licensed fork of
 [SuperFW](https://github.com/davidgfnet/superfw) for **SuperCard SD and
-SuperChis GBA flash carts**. Underneath the extreme attitude is the proven SuperFW engine. Up
-front is a whole new cover-powered game library built for the GBA's
-240-by-160 screen.
+SuperChis GBA flash carts**. Luna 1.2 RC1 is based on **SuperFW v0.21, the
+latest upstream SuperFW firmware release**. Underneath the extreme attitude is
+the proven SuperFW engine. Up front is a whole new cover-powered game library
+built for the GBA's 240-by-160 screen.
 
 ## 41,160 ways to make it yours
 
