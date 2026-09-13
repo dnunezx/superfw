@@ -13,6 +13,7 @@ source tree.
 | Date | State | Local image | Size | SHA-256 |
 | --- | --- | --- | ---: | --- |
 | 2026-09-13 | Current: Luna 1.2 RC1 Chis; hardware-tested on SuperChis | `SuperR7-Chis-Luna1.2-RC1.gba` | 1,671,680 | `791D6FB76F05BC0CD7EF3B67EFCAABB6AB5B8AB9A164240CE0D7EE071B70D3D0` |
+| 2026-09-13 | Candidate: Luna 1.2 RC1 SD; automated verification passed, exact chain-load pending | `SuperR7-SD-Luna1.2-RC1.gba` | 515,584 | `65171A5689FC805B07768AB16EA9B9BB09DA6D8C101D537EE1C5BF379AFD8416` |
 | 2026-08-22 | Candidate: Luna 1.1 SD fingerprint; exact chain-load pending | `SuperR7-SD-Luna1.1-hardware-test.gba` | Pending final tagged build | Pending final tagged build |
 | 2026-08-22 | Current: Browse controls, list resets, and clean logo-to-UI handoff | `superr7-logo-to-ui-no-white-flash-hardware-test.gba` | 521,728 | `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204` |
 | 2026-08-22 | Rollback: connected dynamic Browse page pill | `superr7-connected-page-pill-test.gba` | 520,704 | `136C0726E4758460BBE1E7988F4647F8429946F839B0E556A472FC0230482C36` |
@@ -30,6 +31,11 @@ The latest confirmed SuperChis image is Luna 1.2 RC1. The exact image above
 passed hardware testing, including the SuperChis-specific release gate, and
 its matching `.gba` and `.fw` files are byte-identical. Its recorded size and
 SHA-256 identify the approved release candidate.
+
+The Luna 1.2 RC1 SuperCard SD candidate is built from the same SuperFW v0.21-
+based source. Its automated build and firmware checks pass, and it remains
+8,704 bytes below the 512 KiB limit. It must still be chain-loaded on physical
+SuperCard SD hardware before being promoted from candidate status.
 
 The latest confirmed SuperCard SD image preserves fixed seven-item pages,
 accelerated held Browse paging, and the connected dynamic page pill. It adds
