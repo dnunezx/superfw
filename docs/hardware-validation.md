@@ -12,7 +12,7 @@ source tree.
 
 | Date | State | Local image | Size | SHA-256 |
 | --- | --- | --- | ---: | --- |
-| 2026-09-06 | Candidate: Luna 1.2 RC1 Chis; exact chain-load pending | `SuperR7-Chis-Luna1.2-RC1.gba` | Pending final build | Pending final build |
+| 2026-09-13 | Current: Luna 1.2 RC1 Chis; hardware-tested on SuperChis | `SuperR7-Chis-Luna1.2-RC1.gba` | 1,671,680 | `791D6FB76F05BC0CD7EF3B67EFCAABB6AB5B8AB9A164240CE0D7EE071B70D3D0` |
 | 2026-08-22 | Candidate: Luna 1.1 SD fingerprint; exact chain-load pending | `SuperR7-SD-Luna1.1-hardware-test.gba` | Pending final tagged build | Pending final tagged build |
 | 2026-08-22 | Current: Browse controls, list resets, and clean logo-to-UI handoff | `superr7-logo-to-ui-no-white-flash-hardware-test.gba` | 521,728 | `E9AA581CB3D8401D3663646F1D72183B674C753CE0266C692A50BA056D853204` |
 | 2026-08-22 | Rollback: connected dynamic Browse page pill | `superr7-connected-page-pill-test.gba` | 520,704 | `136C0726E4758460BBE1E7988F4647F8429946F839B0E556A472FC0230482C36` |
@@ -26,12 +26,17 @@ source tree.
 | 2026-08-06 | Historical: initial SuperR7 branding | `superr7-initial-branded.gba` | 518,144 | `72FCA4B89E329B9D2A4E21D5E4BB6C083E997A214C2BB0AE8373FCC0367AF61B` |
 | 2026-08-06 | Historical: pre-branding Phase 5 baseline | `superr7-phase5-baseline.gba` | 520,192 | `15A88B4F0F25B057ED4B93B4B0D855E7F3CFE67C0E7D0B7ADBA01261A6667A92` |
 
-The latest confirmed image preserves fixed seven-item pages, accelerated held
-Browse paging, and the connected dynamic page pill. It adds Browse-only
-sorting and GBA/GB/GBC filtering, confirmed Reset Favorites and Reset Recent
-tools, and a VBlank handoff that keeps the boot logo visible until the first
-complete UI framebuffer is ready. The user confirmed that this exact image
-works great on physical SuperCard SD hardware. Its GBA header checksum,
+The latest confirmed SuperChis image is Luna 1.2 RC1. The exact image above
+passed hardware testing, including the SuperChis-specific release gate, and
+its matching `.gba` and `.fw` files are byte-identical. Its recorded size and
+SHA-256 identify the approved release candidate.
+
+The latest confirmed SuperCard SD image preserves fixed seven-item pages,
+accelerated held Browse paging, and the connected dynamic page pill. It adds
+Browse-only sorting and GBA/GB/GBC filtering, confirmed Reset Favorites and
+Reset Recent tools, and a VBlank handoff that keeps the boot logo visible until
+the first complete UI framebuffer is ready. The user confirmed that this exact
+image works great on physical SuperCard SD hardware. Its GBA header checksum,
 embedded size, and firmware digest are valid, and it remains 2,560 bytes below
 the 512 KiB limit.
 

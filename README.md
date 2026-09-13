@@ -36,6 +36,8 @@ Want a great look immediately? Start with one of four built-in presets:
 
 SuperR7 doesn't just show your games. It **unleashes** them.
 
+- **DUAL-CART POWER!** Run board-specific builds on SuperCard SD or SuperChis
+  GBA flash carts.
 - **MEGA-SIZED COVER POWER!** See native 76-by-76 `.sfcov` box art.
 - **SEVEN-GAME ATTACK!** Pack seven cover-focused game rows with long-title
   support onto every page.
